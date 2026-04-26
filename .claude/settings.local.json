@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(php artisan:*)",
+      "Bash(ls C:/Users/Windows/Herd/SmartWaste-Route/public/favicon* C:/Users/Windows/Herd/SmartWaste-Route/public/apple-touch-icon*)",
+      "Bash(ls C:/Users/Windows/Herd/SmartWaste-Route/public/*.svg)",
+      "Bash(npx --yes sharp-cli --version)",
+      "Bash(npx --yes svg2png-cli public/favicon.svg --output public/favicon-512.png --width 512 --height 512)",
+      "Bash(node -e ':*)",
+      "Bash(npx --yes png-to-ico public/tmp-32.png public/tmp-48.png)",
+      "Bash(rm public/tmp-32.png public/tmp-48.png)",
+      "Bash(npx --yes to-ico public/tmp-32.png public/tmp-48.png --out public/favicon.ico)",
+      "Bash(where php:*)",
+      "Read(//c/Users/Windows/Herd/**)",
+      "Bash(C:/Users/Windows/.config/herd/bin/php.bat:*)",
+      "Bash(C:/Users/Windows/.config/herd/bin/php.bat artisan:*)",
+      "Bash(xargs grep:*)"
+    ]
+  }
+}

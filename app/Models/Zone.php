@@ -3,20 +3,20 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Zone extends Model
 {
-    protected $fillable = ['barangay_id', 'name', 'description', 'active'];
+    protected $fillable = ['name', 'description', 'active'];
 
     protected $casts = [
         'active' => 'boolean',
     ];
 
-    public function barangay(): BelongsTo
+    public function barangays(): BelongsToMany
     {
-        return $this->belongsTo(Barangay::class);
+        return $this->belongsToMany(Barangay::class)->withTimestamps();
     }
 
     public function areas(): HasMany
@@ -42,5 +42,13 @@ class Zone extends Model
     public function missedPickupReports(): HasMany
     {
         return $this->hasMany(MissedPickupReport::class);
+    }
+
+    /**
+     * Helper: comma-separated barangay names for display.
+     */
+    public function barangayNames(): string
+    {
+        return $this->barangays->pluck('name')->join(', ');
     }
 }

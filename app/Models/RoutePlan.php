@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class RoutePlan extends Model
 {
@@ -15,10 +16,20 @@ class RoutePlan extends Model
         'collector_user_id',
         'status',
         'created_by',
+        'current_lat',
+        'current_lng',
+        'location_updated_at',
+        'started_at',
+        'finished_at',
     ];
 
     protected $casts = [
         'route_date' => 'date',
+        'current_lat' => 'float',
+        'current_lng' => 'float',
+        'location_updated_at' => 'datetime',
+        'started_at' => 'datetime',
+        'finished_at' => 'datetime',
     ];
 
     public function zone(): BelongsTo
@@ -49,5 +60,10 @@ class RoutePlan extends Model
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class, 'assigned_route_plan_id');
+    }
+
+    public function collectionReport(): HasOne
+    {
+        return $this->hasOne(CollectionReport::class);
     }
 }

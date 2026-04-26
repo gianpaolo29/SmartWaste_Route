@@ -11,14 +11,13 @@ class LocationController extends Controller
 {
     public function create(Request $request)
     {
-        $zones = Zone::with('barangay')
+        $zones = Zone::with('barangays')
             ->where('active', true)
             ->get()
             ->map(fn ($z) => [
                 'id' => $z->id,
                 'name' => $z->name,
-                'barangay' => $z->barangay->name,
-                'barangay_id' => $z->barangay_id,
+                'barangay' => $z->barangayNames(),
             ]);
 
         return Inertia::render('resident/location/setup', [
@@ -35,13 +34,13 @@ class LocationController extends Controller
             'lng' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
 
-        $zone = \App\Models\Zone::select('id', 'barangay_id')->findOrFail($data['zone_id']);
+        $zone = Zone::with('barangays')->findOrFail($data['zone_id']);
 
         \App\Models\Household::updateOrCreate(
             ['resident_user_id' => $request->user()->id],
             [
                 'zone_id' => $zone->id,
-                'barangay_id' => $zone->barangay_id,
+                'barangay_id' => $zone->barangays->first()?->id,
                 'address_line' => $data['address_line'],
                 'lat' => $data['lat'] ?? null,
                 'lng' => $data['lng'] ?? null,

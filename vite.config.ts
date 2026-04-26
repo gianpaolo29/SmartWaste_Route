@@ -24,4 +24,11 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
+    server: {
+        hmr: {
+            host: 'smartwaste-route.test',
+            protocol: 'wss',
+            clientPort: 5173,
+        },
+    },
 });

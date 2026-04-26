@@ -1,4 +1,4 @@
-import { Head, useForm } from "@inertiajs/react";
+import { Head, router, useForm } from "@inertiajs/react";
 import React, { useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 
@@ -6,7 +6,6 @@ type Zone = {
     id: number | string;
     name: string;
     barangay: string;
-    barangay_id: number | string;
 };
 
 type Props = { zones: Zone[] };
@@ -41,7 +40,7 @@ const normalize = (s: any) =>
         .replace(/\s+/g, " ");
 
 export default function LocationSetup({ zones }: Props) {
-    const { data, setData, post, processing } = useForm<FormData>({
+    const { setData } = useForm<FormData>({
         zone_id: "",
         address_line: "",
         lat: "",
@@ -146,90 +145,39 @@ export default function LocationSetup({ zones }: Props) {
             cancelButtonText: "Deny",
         });
 
-        if (!confirm.isConfirmed) {
-            toast("info", "Location request cancelled");
-            return;
-        }
+        if (!confirm.isConfirmed) return;
 
-        if (!navigator.geolocation) {
-            await Swal.fire({
-                icon: "error",
-                title: "Not Supported",
-                text: "Geolocation is not supported on this browser.",
-            });
-            return;
-        }
-
-        Swal.fire({
-            title: "Getting your location...",
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading(),
-        });
+        if (!navigator.geolocation) return;
 
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
-                Swal.close();
-
                 const lat = pos.coords.latitude;
                 const lng = pos.coords.longitude;
 
                 setData("lat", String(lat));
                 setData("lng", String(lng));
 
-                Swal.fire({
-                    title: "Verifying service area...",
-                    allowOutsideClick: false,
-                    didOpen: () => Swal.showLoading(),
-                });
-
                 const result = await reverseGeocodeAndAutoPickZone(lat, lng);
-                Swal.close();
-
                 if (!result) return;
 
                 setData("zone_id", result.zone_id);
                 setData("address_line", result.address_line);
 
-                await Swal.fire({
-                    icon: "success",
-                    title: "Location Accepted",
-                    text: "You are within Tuy, Batangas. Zone detected and will be saved automatically.",
-                    timer: 1600,
-                    showConfirmButton: false,
-                });
-
-                // Auto-save immediately
-                Swal.fire({
-                    title: "Saving...",
-                    allowOutsideClick: false,
-                    didOpen: () => Swal.showLoading(),
-                });
-
-                post("/resident/location/setup", {
-                    preserveScroll: true,
-                    onSuccess: async () => {
-                        Swal.close();
-                        toast("success", "Saved successfully");
+                router.post(
+                    "/resident/location/setup",
+                    {
+                        zone_id: result.zone_id,
+                        address_line: result.address_line,
+                        lat: String(lat),
+                        lng: String(lng),
                     },
-                    onError: async () => {
-                        Swal.close();
-                        await Swal.fire({
-                            icon: "error",
-                            title: "Save failed",
-                            text: "Please ensure zones/barangays exist and try again.",
-                        });
-                    },
-                });
+                    {
+                        preserveScroll: true,
+                        onSuccess: () => router.visit("/resident/dashboard"),
+                    }
+                );
             },
-            async (err) => {
-                Swal.close();
-
-                await Swal.fire({
-                    icon: "error",
-                    title: "Location Permission Denied",
-                    text: err?.message ?? "Please allow location permission in your browser settings.",
-                });
-            },
+            () => {},
             { enableHighAccuracy: true, timeout: 12000 }
         );
     };
@@ -242,29 +190,5 @@ export default function LocationSetup({ zones }: Props) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    return (
-        <>
-            <Head title="Set Service Location" />
-            <div className="mx-auto max-w-2xl space-y-4 p-6">
-                <h1 className="text-2xl font-semibold">Set Service Location</h1>
-
-                {/* No manual inputs — just show current state for debugging/visibility */}
-                <div className="rounded border bg-white p-4 text-sm space-y-2">
-                    <div><span className="text-gray-500">Zone ID:</span> {data.zone_id || "-"}</div>
-                    <div><span className="text-gray-500">Address:</span> {data.address_line || "-"}</div>
-                    <div><span className="text-gray-500">Lat:</span> {data.lat || "-"}</div>
-                    <div><span className="text-gray-500">Lng:</span> {data.lng || "-"}</div>
-
-                    <button
-                        type="button"
-                        disabled={processing}
-                        onClick={runAutoSetup}
-                        className="mt-3 rounded border px-3 py-2 text-sm disabled:opacity-50"
-                    >
-                        Retry Auto Setup
-                    </button>
-                </div>
-            </div>
-        </>
-    );
+    return <Head title="Set Service Location" />;
 }

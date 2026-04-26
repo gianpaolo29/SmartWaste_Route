@@ -1,41 +1,30 @@
 <?php
 
-namespace App\Models;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-
-class RouteStop extends Model
+return new class extends Migration
 {
-    protected $fillable = [
-        'route_plan_id',
-        'stop_no',
-        'household_id',
-        'stop_address',
-        'lat',
-        'lng',
-        'planned_eta',
-    ];
-
-    protected $casts = [
-        'stop_no' => 'integer',
-        'lat' => 'float',
-        'lng' => 'float',
-    ];
-
-    public function routePlan(): BelongsTo
+    public function up(): void
     {
-        return $this->belongsTo(RoutePlan::class);
+        Schema::create('route_stops', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('route_plan_id')->constrained()->cascadeOnDelete();
+            $table->unsignedInteger('stop_no');
+            $table->foreignId('household_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('stop_address')->nullable();
+            $table->decimal('lat', 10, 7)->nullable();
+            $table->decimal('lng', 10, 7)->nullable();
+            $table->timestamp('planned_eta')->nullable();
+            $table->timestamps();
+
+            $table->index(['route_plan_id', 'stop_no']);
+        });
     }
 
-    public function household(): BelongsTo
+    public function down(): void
     {
-        return $this->belongsTo(Household::class);
+        Schema::dropIfExists('route_stops');
     }
-
-    public function collection(): HasOne
-    {
-        return $this->hasOne(CollectionLog::class, 'route_stop_id');
-    }
-}
+};

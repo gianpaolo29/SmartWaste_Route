@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,9 +15,21 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        User::updateOrCreate(
+            ['email' => 'admin@smartwaste.test'],
+            [
+                'name' => 'Admin',
+                'password' => 'password',
+                'role' => 'admin',
+                'status' => 'active',
+            ],
+        );
+
+        $this->call([
+            TuyBarangaySeeder::class,
+            TruckSeeder::class,
+            CollectorSeeder::class,
+            ResidentSeeder::class,
         ]);
     }
 }
