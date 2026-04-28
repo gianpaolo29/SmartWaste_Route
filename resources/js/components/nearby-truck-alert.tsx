@@ -99,7 +99,8 @@ export function NearbyTruckAlert() {
 
 async function notify(truck: TruckData) {
     try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const ctx = new AudioCtx();
         const o = ctx.createOscillator();
         const g = ctx.createGain();
         o.connect(g);

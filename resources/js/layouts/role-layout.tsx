@@ -7,7 +7,7 @@ import type { AppLayoutProps } from '@/types';
 
 // Automatically picks the correct role-specific layout for the logged-in user.
 export default function RoleLayout({ children, breadcrumbs = [] }: AppLayoutProps) {
-    const { auth } = usePage().props as any;
+    const { auth } = usePage().props as unknown as { auth: { user: { role: string } } };
     const role = auth?.user?.role;
 
     const Layout =

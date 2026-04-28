@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { Users, Truck, MapPin, Route, BarChart3, TrendingUp, TrendingDown, ArrowUpRight, ChevronRight, Activity, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Users, Truck, MapPin, Route, TrendingUp, TrendingDown, ArrowUpRight, ChevronRight, Activity, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AdminLayout from '@/layouts/admin-layout';
 import type { BreadcrumbItem } from '@/types';

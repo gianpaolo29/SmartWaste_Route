@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect } from 'react';
-import { Plus, Route, MapPin, User, ChevronRight, Truck, Clock } from 'lucide-react';
+import { Plus, Route, MapPin, User, ChevronRight, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AdminLayout from '@/layouts/admin-layout';
 import type { BreadcrumbItem } from '@/types';

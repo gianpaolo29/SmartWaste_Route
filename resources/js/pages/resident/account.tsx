@@ -7,7 +7,7 @@ import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useInitials } from '@/hooks/use-initials';
-import { confirm as confirmDialog, successAlert, errorAlert } from '@/lib/notify';
+import { confirm as confirmDialog, successAlert } from '@/lib/notify';
 import { logout } from '@/routes';
 import PasswordController from '@/actions/App/Http/Controllers/Settings/PasswordController';
 import {
@@ -52,7 +52,7 @@ function AccordionRow({ icon: Icon, label, isOpen, onToggle, children, isLast = 
     );
 }
 
-export default function ResidentAccount({ stats, twoFactorEnabled = false }: Props) {
+export default function ResidentAccount({ stats }: Props) {
     const { auth } = usePage().props as { auth: { user: User } };
     const getInitials = useInitials();
     const isMobile = useIsMobile();

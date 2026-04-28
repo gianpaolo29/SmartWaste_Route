@@ -1,4 +1,4 @@
-import { Link, router, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { Bell, ChevronDown, Maximize, Minimize, Search, X } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -66,8 +66,14 @@ export function AdminHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem
         }
     };
 
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+        const id = setInterval(() => setNow(Date.now()), 60000);
+        return () => clearInterval(id);
+    }, []);
+
     const timeAgo = (date: string) => {
-        const diff = Date.now() - new Date(date).getTime();
+        const diff = now - new Date(date).getTime();
         const mins = Math.floor(diff / 60000);
         if (mins < 1) return 'Just now';
         if (mins < 60) return `${mins}m ago`;

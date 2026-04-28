@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { Truck, UserCheck, UserX, Search, Eye, Pencil, X, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminLayout from '@/layouts/admin-layout';
-import { confirm, toast, errorAlert, successAlert } from '@/lib/notify';
+import { confirm, errorAlert, successAlert } from '@/lib/notify';
 import type { BreadcrumbItem } from '@/types';
 
 type Item = {

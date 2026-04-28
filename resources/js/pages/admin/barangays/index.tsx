@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { APIProvider, Map, useMap } from '@vis.gl/react-google-maps';
 import { Building2, Users, MapPin, Layers, Search, Map as MapIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

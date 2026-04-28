@@ -1,5 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { AlertTriangle, Bell, ChevronDown, Home, LogOut, Palette, Settings, Truck, User } from 'lucide-react';
+import { AlertTriangle, ChevronDown, Home, LogOut, Palette, Truck, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     DropdownMenu,

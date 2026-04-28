@@ -16,7 +16,7 @@ export function ResidentHeader({
 }: {
     breadcrumbs?: BreadcrumbItemType[];
 }) {
-    const { auth } = usePage().props as any;
+    const { auth } = usePage().props as { auth: { user: import('@/types').User } };
 
     return (
         <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-4 md:hidden">

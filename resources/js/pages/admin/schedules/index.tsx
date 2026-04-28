@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, CalendarDays, Clock, MapPin, Truck, Users, CheckCircle2, AlertCircle, Play, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, Clock, MapPin, Truck, CheckCircle2, AlertCircle, Play, Plus } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
 import type { BreadcrumbItem } from '@/types';
 

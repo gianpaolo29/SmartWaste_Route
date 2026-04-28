@@ -1,6 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
-import { errorAlert, infoConfirm, loading, closeLoading, successAlert, toast } from '@/lib/notify';
+import { errorAlert, infoConfirm, loading, closeLoading, successAlert } from '@/lib/notify';
 
 type Zone = {
     id: number | string;
@@ -30,7 +30,7 @@ const isInsideTuyBounds = (lat: number, lng: number) =>
     lng >= TUY_BOUNDS.minLng &&
     lng <= TUY_BOUNDS.maxLng;
 
-const normalize = (s: any) =>
+const normalize = (s: unknown) =>
     String(s ?? '')
         .toLowerCase()
         .trim()

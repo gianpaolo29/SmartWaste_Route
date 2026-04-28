@@ -15,7 +15,7 @@ export default function SettingsLayout({ children, title = 'Settings' }: PropsWi
 
     if (typeof window === 'undefined') return null;
 
-    const backHref = (auth.user as any).role === 'resident' ? '/resident/account' : '/dashboard';
+    const backHref = (auth.user as unknown as { role: string }).role === 'resident' ? '/resident/account' : '/dashboard';
 
     return (
         <div className="flex min-h-screen flex-col bg-neutral-50 dark:bg-neutral-950">

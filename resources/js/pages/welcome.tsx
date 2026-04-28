@@ -22,7 +22,7 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { dashboard, login, register } from '@/routes';
 
 type Feature = {
@@ -309,7 +309,7 @@ function FloatingOrb({ className, delay = 0 }: { className?: string; delay?: num
 }
 
 export default function Welcome({ canRegister = true }: { canRegister?: boolean }) {
-    const { auth } = usePage().props as any;
+    const { auth } = usePage().props as unknown as { auth: { user: { name: string } | null }; canRegister: boolean };
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const navItems = [

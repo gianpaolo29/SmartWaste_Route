@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Eye, EyeOff, Lock, Mail, Truck, User, ArrowRight, Sparkles, Leaf, Recycle, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import InputError from '@/components/input-error';
-import { register as registerRoute } from '@/routes';
+// Google OAuth + Fortify routes
 import { store as loginStore } from '@/routes/login';
 import { store as registerStore } from '@/routes/register';
 import { request } from '@/routes/password';
