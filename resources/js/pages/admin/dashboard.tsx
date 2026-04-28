@@ -29,226 +29,145 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const statusConfig: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-    planned: { label: 'Planned', bg: 'bg-gray-50', text: 'text-gray-600', dot: 'bg-gray-400' },
-    in_progress: { label: 'In Progress', bg: 'bg-blue-50', text: 'text-blue-600', dot: 'bg-blue-500 animate-pulse' },
-    completed: { label: 'Completed', bg: 'bg-emerald-50', text: 'text-emerald-600', dot: 'bg-emerald-500' },
+    planned: { label: 'Planned', bg: 'bg-neutral-100 dark:bg-neutral-800', text: 'text-neutral-600 dark:text-neutral-400', dot: 'bg-neutral-400' },
+    in_progress: { label: 'In Progress', bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-600 dark:text-blue-400', dot: 'bg-blue-500 animate-pulse' },
+    completed: { label: 'Completed', bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
 };
+
+const fade = (delay = 0) => ({
+    initial: { opacity: 0, y: 16 } as const,
+    animate: { opacity: 1, y: 0 } as const,
+    transition: { duration: 0.35, delay },
+});
 
 export default function AdminDashboard({ stats, recentRoutes }: { stats: Stats; recentRoutes: RecentRoute[] }) {
     const statCards = [
-        {
-            label: 'Total Residents',
-            value: stats.residents.toLocaleString(),
-            icon: Users,
-            trend: 'up' as const,
-            trendValue: '12.5%',
-            subtitle: 'Registered households',
-            iconBg: 'bg-blue-50 dark:bg-blue-900/20',
-            iconColor: 'text-blue-600 dark:text-blue-400',
-        },
-        {
-            label: 'Total Collectors',
-            value: stats.collectors.toLocaleString(),
-            icon: Truck,
-            trend: 'up' as const,
-            trendValue: '8.2%',
-            subtitle: 'Active personnel',
-            iconBg: 'bg-emerald-50 dark:bg-emerald-900/20',
-            iconColor: 'text-emerald-600 dark:text-emerald-400',
-        },
-        {
-            label: 'Active Zones',
-            value: stats.active_zones.toLocaleString(),
-            icon: MapPin,
-            trend: 'up' as const,
-            trendValue: '4.1%',
-            subtitle: `${stats.total_barangays} barangays covered`,
-            iconBg: 'bg-amber-50 dark:bg-amber-900/20',
-            iconColor: 'text-amber-600 dark:text-amber-400',
-        },
-        {
-            label: 'Missed Reports',
-            value: stats.reports.toLocaleString(),
-            icon: AlertTriangle,
-            trend: 'down' as const,
-            trendValue: '3.8%',
-            subtitle: 'Total filed reports',
-            iconBg: 'bg-red-50 dark:bg-red-900/20',
-            iconColor: 'text-red-500 dark:text-red-400',
-        },
+        { label: 'Total Residents', value: stats.residents, icon: Users, trend: 'up' as const, trendValue: '12.5%', sub: 'Registered households', iconBg: 'bg-blue-50 dark:bg-blue-950/40', iconColor: 'text-blue-600 dark:text-blue-400' },
+        { label: 'Collectors', value: stats.collectors, icon: Truck, trend: 'up' as const, trendValue: '8.2%', sub: 'Active personnel', iconBg: 'bg-emerald-50 dark:bg-emerald-950/40', iconColor: 'text-emerald-600 dark:text-emerald-400' },
+        { label: 'Active Zones', value: stats.active_zones, icon: MapPin, trend: 'up' as const, trendValue: '4.1%', sub: `${stats.total_barangays} barangays`, iconBg: 'bg-amber-50 dark:bg-amber-950/40', iconColor: 'text-amber-600 dark:text-amber-400' },
+        { label: 'Missed Reports', value: stats.reports, icon: AlertTriangle, trend: 'down' as const, trendValue: '3.8%', sub: 'Filed reports', iconBg: 'bg-red-50 dark:bg-red-950/40', iconColor: 'text-red-500 dark:text-red-400' },
     ];
 
     const summaryCards = [
-        { label: 'Total Routes', value: stats.total_routes, icon: Route, color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
-        { label: 'Active Now', value: stats.active_routes, icon: Activity, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-        { label: 'Completed', value: stats.completed_routes, icon: CheckCircle2, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+        { label: 'Total Routes', value: stats.total_routes, icon: Route, color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-950/40' },
+        { label: 'Active Now', value: stats.active_routes, icon: Activity, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/40' },
+        { label: 'Completed', value: stats.completed_routes, icon: CheckCircle2, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/40' },
     ];
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Admin Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-6 p-6">
-                {/* Page title */}
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+            <div className="space-y-5 p-4 sm:p-5">
+                <motion.div {...fade()}>
+                    <h1 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Dashboard</h1>
+                    <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">Overview of your waste management system</p>
                 </motion.div>
 
-                {/* Stat cards — Mantis style */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {/* Stat Cards */}
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     {statCards.map((card, i) => {
                         const Icon = card.icon;
                         const isUp = card.trend === 'up';
                         return (
-                            <motion.div
-                                key={card.label}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: i * 0.06 }}
-                                className="rounded-xl border border-gray-100 bg-white p-5 transition-shadow hover:shadow-md dark:border-white/5 dark:bg-white/[0.02]"
-                            >
+                            <motion.div key={card.label} {...fade(0.04 + i * 0.04)}
+                                className="group rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900">
                                 <div className="flex items-center justify-between">
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{card.label}</p>
-                                    <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${card.iconBg}`}>
-                                        <Icon size={18} className={card.iconColor} />
+                                    <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{card.label}</p>
+                                    <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${card.iconBg} transition-transform group-hover:scale-110`}>
+                                        <Icon size={17} className={card.iconColor} />
                                     </div>
                                 </div>
-                                <div className="mt-3 flex items-baseline gap-2.5">
-                                    <span className="text-3xl font-bold tracking-tight">{card.value}</span>
-                                    <span className={`inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-xs font-semibold ${
-                                        isUp
-                                            ? 'border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400'
-                                            : 'border-red-200 text-red-500 dark:border-red-800 dark:text-red-400'
-                                    }`}>
-                                        {isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                                <div className="mt-2 flex items-baseline gap-2">
+                                    <span className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">{card.value.toLocaleString()}</span>
+                                    <span className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${isUp ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-400'}`}>
+                                        {isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
                                         {card.trendValue}
                                     </span>
                                 </div>
-                                <p className="mt-2 text-xs text-gray-400">{card.subtitle}</p>
+                                <p className="mt-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">{card.sub}</p>
                             </motion.div>
                         );
                     })}
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-3">
+                <div className="grid gap-4 lg:grid-cols-3">
                     {/* Recent Routes */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="rounded-xl border border-gray-100 bg-white lg:col-span-2 dark:border-white/5 dark:bg-white/[0.02]"
-                    >
-                        <div className="flex items-center justify-between border-b border-gray-50 px-5 py-4 dark:border-white/5">
+                    <motion.div {...fade(0.22)} className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm lg:col-span-2 dark:border-neutral-800 dark:bg-neutral-900">
+                        <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3.5 dark:border-neutral-800">
                             <div>
-                                <h2 className="font-semibold tracking-tight">Recent Routes</h2>
-                                <p className="mt-0.5 text-xs text-gray-400">Latest collection route activity</p>
+                                <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">Recent Routes</h2>
+                                <p className="text-[11px] text-neutral-400">Latest collection activity</p>
                             </div>
-                            <Link
-                                href="/admin/routes"
-                                className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400"
-                            >
-                                View all
-                                <ChevronRight size={13} />
+                            <Link href="/admin/routes" className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
+                                View all <ChevronRight size={13} />
                             </Link>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-gray-50 text-left dark:border-white/5">
-                                        <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-gray-400">Route</th>
-                                        <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-gray-400">Zone</th>
-                                        <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-gray-400">Collector</th>
-                                        <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-gray-400">Status</th>
-                                        <th className="px-5 py-2.5"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {recentRoutes.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={5} className="px-5 py-10 text-center text-sm text-gray-400">
-                                                No routes yet.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        recentRoutes.map((r) => {
-                                            const st = statusConfig[r.status] ?? statusConfig.planned;
-                                            return (
-                                                <tr key={r.id} className="border-t border-gray-50 transition-colors hover:bg-gray-50/50 dark:border-white/[0.03] dark:hover:bg-white/[0.02]">
-                                                    <td className="px-5 py-3">
-                                                        <div className="flex items-center gap-2">
-                                                            <Clock size={13} className="text-gray-300" />
-                                                            <span className="font-medium">{r.route_date ?? '—'}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-5 py-3 text-gray-600 dark:text-gray-400">
-                                                        {r.zone ?? '—'}
-                                                        {r.barangay && <span className="ml-1 text-xs text-gray-400">({r.barangay})</span>}
-                                                    </td>
-                                                    <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{r.collector ?? <span className="text-gray-300">Unassigned</span>}</td>
-                                                    <td className="px-5 py-3">
-                                                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${st.bg} ${st.text}`}>
-                                                            <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
-                                                            {st.label}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-5 py-3 text-right">
-                                                        <Link href={`/admin/routes/${r.id}`} className="inline-flex items-center gap-0.5 text-xs font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
-                                                            View <ArrowUpRight size={12} />
-                                                        </Link>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        {recentRoutes.length === 0 ? (
+                            <div className="px-4 py-12 text-center">
+                                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+                                    <Route size={20} className="text-neutral-400" />
+                                </div>
+                                <p className="mt-3 text-sm text-neutral-400">No routes yet</p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-neutral-50 dark:divide-neutral-800">
+                                {recentRoutes.map((r) => {
+                                    const st = statusConfig[r.status] ?? statusConfig.planned;
+                                    return (
+                                        <Link key={r.id} href={`/admin/routes/${r.id}`} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800">
+                                                <Clock size={15} className="text-neutral-500 dark:text-neutral-400" />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="truncate text-sm font-medium text-neutral-900 dark:text-white">{r.route_date ?? '—'}</p>
+                                                    {r.barangay && <span className="truncate text-xs text-neutral-400">({r.barangay})</span>}
+                                                </div>
+                                                <p className="truncate text-xs text-neutral-400">{r.zone ?? '—'} · {r.collector ?? 'Unassigned'}</p>
+                                            </div>
+                                            <span className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${st.bg} ${st.text}`}>
+                                                <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
+                                                {st.label}
+                                            </span>
+                                            <ArrowUpRight size={14} className="shrink-0 text-neutral-300 dark:text-neutral-600" />
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </motion.div>
 
-                    {/* Route Summary */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.35 }}
-                        className="rounded-xl border border-gray-100 bg-white dark:border-white/5 dark:bg-white/[0.02]"
-                    >
-                        <div className="border-b border-gray-50 px-5 py-4 dark:border-white/5">
-                            <h2 className="font-semibold tracking-tight">Route Overview</h2>
-                            <p className="mt-0.5 text-xs text-gray-400">Collection route statistics</p>
+                    {/* Route Overview */}
+                    <motion.div {...fade(0.26)} className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+                        <div className="border-b border-neutral-100 px-4 py-3.5 dark:border-neutral-800">
+                            <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">Route Overview</h2>
+                            <p className="text-[11px] text-neutral-400">Collection route statistics</p>
                         </div>
-                        <div className="p-5">
-                            {/* Big number */}
-                            <div className="mb-5 text-center">
-                                <p className="text-4xl font-bold tracking-tight">{stats.total_routes}</p>
-                                <p className="mt-1 text-sm text-gray-400">Total Routes</p>
+                        <div className="p-4">
+                            <div className="mb-4 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 p-5 text-center text-white shadow-md shadow-emerald-600/15">
+                                <p className="text-4xl font-bold">{stats.total_routes}</p>
+                                <p className="mt-1 text-sm text-white/70">Total Routes Created</p>
                             </div>
 
-                            {/* Summary items */}
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 {summaryCards.map((item) => {
                                     const Icon = item.icon;
                                     return (
-                                        <div key={item.label} className="flex items-center gap-3 rounded-lg bg-gray-50/80 px-4 py-3 dark:bg-white/[0.03]">
-                                            <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${item.bg}`}>
+                                        <div key={item.label} className="flex items-center gap-3 rounded-xl bg-neutral-50 p-3 dark:bg-neutral-800/40">
+                                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${item.bg}`}>
                                                 <Icon size={16} className={item.color} />
                                             </div>
                                             <div className="flex-1">
-                                                <p className="text-xs text-gray-500">{item.label}</p>
-                                                <p className="text-lg font-bold">{item.value}</p>
+                                                <p className="text-xs text-neutral-500 dark:text-neutral-400">{item.label}</p>
+                                                <p className="text-lg font-bold text-neutral-900 dark:text-white">{item.value}</p>
                                             </div>
                                         </div>
                                     );
                                 })}
                             </div>
 
-                            {/* Quick action */}
-                            <Link
-                                href="/admin/routes/create"
-                                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] px-4 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-600/10 transition-all hover:-translate-y-0.5 hover:shadow-lg"
-                            >
+                            <Link href="/admin/routes/create"
+                                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-[0.98]">
                                 <Route size={16} />
                                 Create New Route
                             </Link>

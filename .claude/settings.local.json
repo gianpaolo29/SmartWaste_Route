@@ -20,7 +20,8 @@
       "Bash(xargs grep:*)",
       "WebFetch(domain:i.pinimg.com)",
       "Bash(composer require:*)",
-      "Bash(grep -E \"\\\\.\\(php|tsx|ts\\)$\")"
+      "Bash(grep -E \"\\\\.\\(php|tsx|ts\\)$\")",
+      "Bash(ls .env*)"
     ]
   }
 }
