@@ -1,9 +1,14 @@
 <?php
 
+use App\Http\Controllers\Auth\GoogleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\GeocodeController;
+
+// Google OAuth
+Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('auth.google.redirect');
+Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name('auth.google.callback');
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -27,6 +32,8 @@ Route::middleware(['auth'])->get('/dashboard', function () {
 
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminListController::class, 'dashboard'])->name('dashboard');
+    Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\Admin\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
     Route::get('/routes', [\App\Http\Controllers\Admin\RoutePlanController::class, 'index'])->name('routes.index');
     Route::get('/routes/create', [\App\Http\Controllers\Admin\RoutePlanController::class, 'create'])->name('routes.create');
@@ -79,6 +86,7 @@ Route::middleware(['auth'])->get('/admin/routes/{route}/location', [\App\Http\Co
 
 Route::middleware(['auth', 'role:resident'])->prefix('resident')->name('resident.')->group(function () {
     Route::get('/dashboard', \App\Http\Controllers\Resident\ResidentDashboardController::class)->name('dashboard');
+    Route::get('/account', [\App\Http\Controllers\Resident\ResidentAccountController::class, 'index'])->name('account');
     Route::get('/location/setup', [\App\Http\Controllers\Resident\LocationController::class, 'create'])->name('location.create');
     Route::post('/location/setup', [\App\Http\Controllers\Resident\LocationController::class, 'store'])->name('location.store');
 

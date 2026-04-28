@@ -4,6 +4,7 @@ import { APIProvider, Map, useMap } from '@vis.gl/react-google-maps';
 import { Plus, X, Pencil, Trash2, MapPin, Layers, Search } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
 import { TuyBoundary } from '@/components/tuy-boundary';
+import { confirm as swalConfirm } from '@/lib/notify';
 import type { BreadcrumbItem } from '@/types';
 
 type BarangayRef = { id: number; name: string };
@@ -302,10 +303,9 @@ export default function ZonesIndex({
         setSelectedBarangayIds([]);
     };
 
-    const deleteZone = (zone: Item) => {
-        if (confirm(`Delete zone "${zone.name}"? This cannot be undone.`)) {
-            router.delete(`/admin/zones/${zone.id}`);
-        }
+    const deleteZone = async (zone: Item) => {
+        const yes = await swalConfirm('Delete zone?', `This will permanently delete "${zone.name}". This cannot be undone.`, 'Yes, delete');
+        if (yes) router.delete(`/admin/zones/${zone.id}`);
     };
 
     return (

@@ -10,7 +10,8 @@ Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', '/settings/profile');
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('settings/profile/avatar', [ProfileController::class, 'removeAvatar'])->name('profile.avatar.remove');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

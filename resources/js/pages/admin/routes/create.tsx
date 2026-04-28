@@ -78,7 +78,7 @@ function RouteRenderer({
             (result, status) => {
                 console.log('[Optimize] Directions status:', status, result);
                 if (status !== 'OK' || !result) {
-                    alert(`Directions API returned: ${status}. Check that Directions API is enabled in Google Cloud Console for your key.`);
+                    errorAlert('Directions API Error', `Directions API returned: ${status}. Check that Directions API is enabled in Google Cloud Console for your key.`);
                     return;
                 }
                 renderer.setDirections(result);

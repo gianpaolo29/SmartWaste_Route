@@ -38,7 +38,7 @@ export function AdminSidebar() {
 
     const renderGroup = (label: string, items: typeof mainNav) => (
         <SidebarGroup className="px-3 py-0">
-            <SidebarGroupLabel className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            <SidebarGroupLabel className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
                 {label}
             </SidebarGroupLabel>
             <SidebarMenu>
@@ -48,9 +48,10 @@ export function AdminSidebar() {
                             asChild
                             isActive={isCurrentUrl(item.href)}
                             tooltip={{ children: item.title }}
+                            className="rounded-xl transition-all data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-700 data-[active=true]:font-semibold dark:data-[active=true]:bg-emerald-950/40 dark:data-[active=true]:text-emerald-400"
                         >
                             <Link href={item.href} prefetch>
-                                {item.icon && <item.icon />}
+                                {item.icon && <item.icon size={18} strokeWidth={1.8} />}
                                 <span>{item.title}</span>
                             </Link>
                         </SidebarMenuButton>

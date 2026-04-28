@@ -1,8 +1,8 @@
 import { Head, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { AlertTriangle, FileText, Send } from 'lucide-react';
 import ResidentLayout from '@/layouts/resident-layout';
+import { errorAlert, successAlert } from '@/lib/notify';
 import type { BreadcrumbItem } from '@/types';
-import { errorAlert, toast } from '@/lib/notify';
 
 type Report = {
     id: number;
@@ -13,7 +13,7 @@ type Report = {
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/resident/dashboard' },
+    { title: 'Home', href: '/resident/dashboard' },
     { title: 'Missed Pickup', href: '/resident/missed-pickup' },
 ];
 
@@ -22,85 +22,115 @@ export default function ResidentMissedPickup({ reports }: { reports: Report[] })
         description: '',
     });
 
-    const [clientError, setClientError] = useState<string | null>(null);
-
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         const desc = data.description.trim();
         if (desc.length < 10) {
-            setClientError('Please describe what happened (at least 10 characters).');
+            errorAlert('Too short', 'Please describe what happened (at least 10 characters).');
             return;
         }
-        setClientError(null);
         post('/resident/missed-pickup', {
             preserveScroll: true,
             onSuccess: () => {
                 reset('description');
-                toast('success', 'Report submitted');
+                successAlert('Report submitted', 'We have received your missed pickup report.');
             },
-            onError: () => errorAlert('Submit failed', 'Please try again.'),
+            onError: () => errorAlert('Submit failed', 'Something went wrong. Please try again.'),
         });
+    };
+
+    const statusColor = (status: string) => {
+        switch (status.toLowerCase()) {
+            case 'resolved':
+                return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400';
+            case 'pending':
+                return 'bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400';
+            default:
+                return 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400';
+        }
     };
 
     return (
         <ResidentLayout breadcrumbs={breadcrumbs}>
             <Head title="Missed Pickup" />
-            <div className="space-y-4 p-4">
-                <h1 className="text-2xl font-semibold">Report a Missed Pickup</h1>
+            <div className="space-y-4 px-4 py-5">
+                {/* Header */}
+                <div>
+                    <h1 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Report a Missed Pickup</h1>
+                    <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">Let us know if your garbage was not collected</p>
+                </div>
 
+                {/* Form */}
                 <form
                     onSubmit={submit}
-                    className="space-y-3 rounded-xl border border-sidebar-border/70 bg-white p-4 dark:bg-[#0a0a0a]"
+                    className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
                 >
-                    <div>
-                        <label className="mb-1 block text-sm font-medium">What happened?</label>
+                    <div className="flex items-center gap-2 border-b border-neutral-100 px-4 py-3 dark:border-neutral-800">
+                        <AlertTriangle size={15} className="text-amber-600 dark:text-amber-400" />
+                        <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">What happened?</h2>
+                    </div>
+                    <div className="p-4 space-y-3">
                         <textarea
                             value={data.description}
                             onChange={(e) => setData('description', e.target.value)}
                             rows={4}
                             placeholder="e.g. The garbage truck did not stop at our house this morning."
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 transition-colors focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-emerald-700 dark:focus:bg-neutral-900"
                         />
-                        {(clientError || errors.description) && (
-                            <p className="mt-1 text-xs text-red-600">
-                                {clientError ?? errors.description}
-                            </p>
+                        {errors.description && (
+                            <p className="text-xs text-red-600 dark:text-red-400">{errors.description}</p>
                         )}
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                        >
+                            {processing ? (
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                            ) : (
+                                <Send size={15} />
+                            )}
+                            {processing ? 'Submitting…' : 'Submit Report'}
+                        </button>
                     </div>
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className="inline-flex items-center gap-2 rounded-lg bg-[#2d6a4f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1b4332] disabled:opacity-60"
-                    >
-                        {processing && (
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                        )}
-                        {processing ? 'Submitting…' : 'Submit Report'}
-                    </button>
                 </form>
 
-                <section className="rounded-xl border border-sidebar-border/70 bg-white p-4 dark:bg-[#0a0a0a]">
-                    <h2 className="mb-3 text-lg font-semibold">My Reports</h2>
-                    {reports.length === 0 ? (
-                        <p className="text-sm text-gray-500">No reports yet.</p>
-                    ) : (
-                        <ul className="divide-y divide-gray-100 text-sm">
-                            {reports.map((r) => (
-                                <li key={r.id} className="py-3">
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-medium">{r.report_datetime}</span>
-                                        <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
-                                            {r.status}
-                                        </span>
-                                    </div>
-                                    <p className="mt-1 text-xs text-gray-600">{r.description}</p>
-                                    {r.location_text && (
-                                        <p className="text-xs text-gray-400">{r.location_text}</p>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
+                {/* Reports list */}
+                <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+                    <div className="flex items-center gap-2 border-b border-neutral-100 px-4 py-3 dark:border-neutral-800">
+                        <FileText size={15} className="text-emerald-600 dark:text-emerald-400" />
+                        <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">My Reports</h2>
+                        {reports.length > 0 && (
+                            <span className="ml-auto rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                                {reports.length}
+                            </span>
+                        )}
+                    </div>
+                    <div className="px-4 pb-4">
+                        {reports.length === 0 ? (
+                            <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-8 mt-4 text-center dark:border-neutral-800 dark:bg-neutral-800/30">
+                                <FileText size={28} className="mx-auto text-neutral-300 dark:text-neutral-600" />
+                                <p className="mt-2 text-sm text-neutral-400 dark:text-neutral-500">No reports yet.</p>
+                            </div>
+                        ) : (
+                            <ul className="divide-y divide-neutral-100 text-sm dark:divide-neutral-800">
+                                {reports.map((r) => (
+                                    <li key={r.id} className="py-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-medium text-neutral-900 dark:text-white">{r.report_datetime}</span>
+                                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusColor(r.status)}`}>
+                                                {r.status}
+                                            </span>
+                                        </div>
+                                        <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{r.description}</p>
+                                        {r.location_text && (
+                                            <p className="mt-0.5 text-[11px] text-neutral-400 dark:text-neutral-500">{r.location_text}</p>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
                 </section>
             </div>
         </ResidentLayout>

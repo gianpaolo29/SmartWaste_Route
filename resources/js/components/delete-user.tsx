@@ -1,120 +1,65 @@
-import { Form } from '@inertiajs/react';
-import { useRef } from 'react';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { router } from '@inertiajs/react';
+import { AlertTriangle } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 export default function DeleteUser() {
-    const passwordInput = useRef<HTMLInputElement>(null);
+    const handleDelete = async () => {
+        const { isConfirmed } = await Swal.fire({
+            icon: 'warning',
+            title: 'Delete your account?',
+            text: 'All your data will be permanently removed. This action cannot be undone.',
+            input: 'password',
+            inputPlaceholder: 'Enter your password to confirm',
+            inputAttributes: { autocomplete: 'current-password' },
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Delete account',
+            reverseButtons: true,
+            inputValidator: (value) => (!value ? 'Password is required' : null),
+        });
+
+        if (!isConfirmed) return;
+
+        const password = Swal.getInput()?.value;
+
+        router.delete('/settings/profile', {
+            data: { password },
+            preserveScroll: true,
+            onError: (errors) => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Delete failed',
+                    text: errors.password ?? 'Incorrect password. Please try again.',
+                    confirmButtonColor: '#059669',
+                });
+            },
+        });
+    };
 
     return (
-        <div className="space-y-6">
-            <Heading
-                variant="small"
-                title="Delete account"
-                description="Delete your account and all of its resources"
-            />
-            <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
-                <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
-                    <p className="font-medium">Warning</p>
-                    <p className="text-sm">
-                        Please proceed with caution, this cannot be undone.
-                    </p>
+        <div className="space-y-4">
+            <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500 dark:bg-red-950/50 dark:text-red-400">
+                    <AlertTriangle size={20} strokeWidth={1.8} />
                 </div>
+                <div>
+                    <h3 className="text-base font-semibold text-neutral-900 dark:text-white">Delete Account</h3>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Permanently remove your account and all data</p>
+                </div>
+            </div>
 
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button
-                            variant="destructive"
-                            data-test="delete-user-button"
-                        >
-                            Delete account
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogTitle>
-                            Are you sure you want to delete your account?
-                        </DialogTitle>
-                        <DialogDescription>
-                            Once your account is deleted, all of its resources
-                            and data will also be permanently deleted. Please
-                            enter your password to confirm you would like to
-                            permanently delete your account.
-                        </DialogDescription>
-
-                        <Form
-                            {...ProfileController.destroy.form()}
-                            options={{
-                                preserveScroll: true,
-                            }}
-                            onError={() => passwordInput.current?.focus()}
-                            resetOnSuccess
-                            className="space-y-6"
-                        >
-                            {({ resetAndClearErrors, processing, errors }) => (
-                                <>
-                                    <div className="grid gap-2">
-                                        <Label
-                                            htmlFor="password"
-                                            className="sr-only"
-                                        >
-                                            Password
-                                        </Label>
-
-                                        <Input
-                                            id="password"
-                                            type="password"
-                                            name="password"
-                                            ref={passwordInput}
-                                            placeholder="Password"
-                                            autoComplete="current-password"
-                                        />
-
-                                        <InputError message={errors.password} />
-                                    </div>
-
-                                    <DialogFooter className="gap-2">
-                                        <DialogClose asChild>
-                                            <Button
-                                                variant="secondary"
-                                                onClick={() =>
-                                                    resetAndClearErrors()
-                                                }
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </DialogClose>
-
-                                        <Button
-                                            variant="destructive"
-                                            disabled={processing}
-                                            asChild
-                                        >
-                                            <button
-                                                type="submit"
-                                                data-test="confirm-delete-user-button"
-                                            >
-                                                Delete account
-                                            </button>
-                                        </Button>
-                                    </DialogFooter>
-                                </>
-                            )}
-                        </Form>
-                    </DialogContent>
-                </Dialog>
+            <div className="rounded-xl border border-red-200/60 bg-red-50/50 p-4 dark:border-red-800/30 dark:bg-red-950/20">
+                <p className="mb-3 text-sm text-red-700 dark:text-red-300">
+                    Once deleted, all your data will be permanently removed. This action cannot be undone.
+                </p>
+                <button
+                    onClick={handleDelete}
+                    className="inline-flex items-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-700"
+                    data-test="delete-user-button"
+                >
+                    Delete account
+                </button>
             </div>
         </div>
     );

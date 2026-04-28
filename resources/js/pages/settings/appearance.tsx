@@ -1,35 +1,24 @@
 import { Head } from '@inertiajs/react';
+import { Palette } from 'lucide-react';
 import AppearanceTabs from '@/components/appearance-tabs';
-import Heading from '@/components/heading';
-import RoleLayout from '@/layouts/role-layout';
 import SettingsLayout from '@/layouts/settings/layout';
-import { edit as editAppearance } from '@/routes/appearance';
-import type { BreadcrumbItem } from '@/types';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Appearance settings',
-        href: editAppearance().url,
-    },
-];
 
 export default function Appearance() {
     return (
-        <RoleLayout breadcrumbs={breadcrumbs}>
-            <Head title="Appearance settings" />
+        <SettingsLayout title="Appearance">
+            <Head title="Appearance" />
 
-            <h1 className="sr-only">Appearance Settings</h1>
-
-            <SettingsLayout>
-                <div className="space-y-6">
-                    <Heading
-                        variant="small"
-                        title="Appearance settings"
-                        description="Update your account's appearance settings"
-                    />
-                    <AppearanceTabs />
+            <div className="flex items-start gap-3 mb-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+                    <Palette size={20} strokeWidth={1.8} />
                 </div>
-            </SettingsLayout>
-        </RoleLayout>
+                <div>
+                    <h3 className="text-base font-semibold text-neutral-900 dark:text-white">Appearance</h3>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Choose your preferred theme</p>
+                </div>
+            </div>
+
+            <AppearanceTabs />
+        </SettingsLayout>
     );
 }
