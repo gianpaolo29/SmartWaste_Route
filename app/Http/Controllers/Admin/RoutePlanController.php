@@ -57,7 +57,7 @@ class RoutePlanController extends Controller
         return Inertia::render('admin/routes/create', [
             'zones' => $zones,
             'collectors' => $collectors,
-            'mapsApiKey' => env('VITE_GOOGLE_MAPS_API_KEY'),
+            'mapsApiKey' => config('services.google.maps_api_key'),
         ]);
     }
 
@@ -144,7 +144,7 @@ class RoutePlanController extends Controller
                     'lng' => (float) $s->lng,
                 ]),
             ],
-            'mapsApiKey' => env('VITE_GOOGLE_MAPS_API_KEY'),
+            'mapsApiKey' => config('services.google.maps_api_key'),
         ]);
     }
 }

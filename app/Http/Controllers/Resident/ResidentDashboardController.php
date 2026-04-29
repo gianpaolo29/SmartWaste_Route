@@ -36,7 +36,7 @@ class ResidentDashboardController extends Controller
             ->get();
 
         return Inertia::render('resident/dashboard', [
-            'mapsApiKey' => env('VITE_GOOGLE_MAPS_API_KEY'),
+            'mapsApiKey' => config('services.google.maps_api_key'),
             'household' => [
                 'address' => $household->address_line,
                 'lat' => (float) $household->lat,

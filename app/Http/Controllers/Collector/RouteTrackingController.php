@@ -37,7 +37,7 @@ class RouteTrackingController extends Controller
                     'collection_status' => $s->collection?->status,
                 ]),
             ],
-            'mapsApiKey' => env('VITE_GOOGLE_MAPS_API_KEY'),
+            'mapsApiKey' => config('services.google.maps_api_key'),
         ]);
     }
 

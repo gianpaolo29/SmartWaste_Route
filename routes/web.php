@@ -30,7 +30,7 @@ Route::middleware(['auth'])->get('/dashboard', function () {
     };
 })->name('dashboard');
 
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminListController::class, 'dashboard'])->name('dashboard');
     Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [\App\Http\Controllers\Admin\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
@@ -82,7 +82,7 @@ Route::middleware(['auth', 'role:collector'])->prefix('collector')->name('collec
 });
 
 // Admin polls live location (auth-protected)
-Route::middleware(['auth'])->get('/admin/routes/{route}/location', [\App\Http\Controllers\Collector\RouteTrackingController::class, 'location'])->name('admin.routes.location');
+Route::middleware(['auth', 'role:admin'])->get('/admin/routes/{route}/location', [\App\Http\Controllers\Collector\RouteTrackingController::class, 'location'])->name('admin.routes.location');
 
 Route::middleware(['auth', 'role:resident'])->prefix('resident')->name('resident.')->group(function () {
     Route::get('/dashboard', \App\Http\Controllers\Resident\ResidentDashboardController::class)->name('dashboard');

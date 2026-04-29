@@ -71,7 +71,7 @@ class AdminListController extends Controller
         return Inertia::render('admin/barangays/index', [
             'items' => $items,
             'stats' => $stats,
-            'mapsApiKey' => env('VITE_GOOGLE_MAPS_API_KEY'),
+            'mapsApiKey' => config('services.google.maps_api_key'),
         ]);
     }
 
@@ -104,7 +104,7 @@ class AdminListController extends Controller
         return Inertia::render('admin/zones/index', [
             'items' => $items,
             'barangays' => $barangays,
-            'mapsApiKey' => env('VITE_GOOGLE_MAPS_API_KEY'),
+            'mapsApiKey' => config('services.google.maps_api_key'),
         ]);
     }
 
