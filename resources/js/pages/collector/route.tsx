@@ -355,7 +355,6 @@ export default function CollectorRoute({
         const loadVoices = () => {
             const all = window.speechSynthesis.getVoices();
             voicesRef.current = all;
-            // Filter to English voices for the picker
             const english = all.filter((v) => v.lang.startsWith('en'));
             setAvailableVoices(english.length > 0 ? english : all);
         };
@@ -374,11 +373,11 @@ export default function CollectorRoute({
         utterance.rate = 0.95;
         utterance.pitch = 1;
         utterance.volume = 1;
-        utterance.lang = 'en-US';
 
         // Use selected voice or default to Google UK English Female
         if (selectedVoiceIdx >= 0 && availableVoices[selectedVoiceIdx]) {
             utterance.voice = availableVoices[selectedVoiceIdx];
+            utterance.lang = availableVoices[selectedVoiceIdx].lang;
         } else {
             const voices = voicesRef.current;
             const preferred =
@@ -387,7 +386,12 @@ export default function CollectorRoute({
                 voices.find((v) => v.lang === 'en-GB' && v.localService) ??
                 voices.find((v) => v.lang.startsWith('en') && v.localService) ??
                 voices.find((v) => v.lang.startsWith('en'));
-            if (preferred) utterance.voice = preferred;
+            if (preferred) {
+                utterance.voice = preferred;
+                utterance.lang = preferred.lang;
+            } else {
+                utterance.lang = 'en-US';
+            }
         }
 
         window.speechSynthesis.speak(utterance);
