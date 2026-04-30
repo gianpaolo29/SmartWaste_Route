@@ -284,6 +284,9 @@ export default function CollectorRoute({
     const [navSteps, setNavSteps] = useState<NavStep[]>([]);
     const [voiceEnabled, setVoiceEnabled] = useState(true);
     const [currentInstruction, setCurrentInstruction] = useState<string | null>(null);
+    const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+    const [selectedVoiceIdx, setSelectedVoiceIdx] = useState<number>(-1); // -1 = auto
+    const [showVoicePicker, setShowVoicePicker] = useState(false);
     const lastSpokenRef = useRef<string>('');
     const prevPos = useRef<{ lat: number; lng: number } | null>(null);
     const watchRef = useRef<number | null>(null);
@@ -342,24 +345,76 @@ export default function CollectorRoute({
     const remainingStops = useMemo(() => stops.filter((s) => !s.collection_status).length, [stops]);
 
     // ── Voice navigation ──
-    const speak = useCallback((text: string) => {
-        if (!voiceEnabled || !window.speechSynthesis) return;
-        // Don't repeat the same instruction
-        if (text === lastSpokenRef.current) return;
+    const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+    const lastSpokenStepRef = useRef<number>(-1); // track by step index, not text
+    const lastSpokenStopRef = useRef<number>(-1); // track which stop was announced
+
+    // Load voices (they load async on many browsers)
+    useEffect(() => {
+        if (!window.speechSynthesis) return;
+        const loadVoices = () => {
+            const all = window.speechSynthesis.getVoices();
+            voicesRef.current = all;
+            // Filter to English voices for the picker
+            const english = all.filter((v) => v.lang.startsWith('en'));
+            setAvailableVoices(english.length > 0 ? english : all);
+        };
+        loadVoices();
+        window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+        return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+    }, []);
+
+    const speak = useCallback((text: string, force = false) => {
+        if (!voiceEnabled || !window.speechSynthesis || !text) return;
+        if (!force && text === lastSpokenRef.current) return;
         lastSpokenRef.current = text;
+
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 1;
+        utterance.rate = 0.95;
         utterance.pitch = 1;
         utterance.volume = 1;
-        // Try to use a local voice
-        const voices = window.speechSynthesis.getVoices();
-        const preferred = voices.find((v) => v.lang.startsWith('en') && v.localService);
-        if (preferred) utterance.voice = preferred;
-        window.speechSynthesis.speak(utterance);
-    }, [voiceEnabled]);
+        utterance.lang = 'en-US';
 
-    // Find the upcoming step based on truck position
+        // Use selected voice or default to Google UK English Female
+        if (selectedVoiceIdx >= 0 && availableVoices[selectedVoiceIdx]) {
+            utterance.voice = availableVoices[selectedVoiceIdx];
+        } else {
+            const voices = voicesRef.current;
+            const preferred =
+                voices.find((v) => v.name.toLowerCase().includes('google uk english female')) ??
+                voices.find((v) => v.name.toLowerCase().includes('google uk english')) ??
+                voices.find((v) => v.lang === 'en-GB' && v.localService) ??
+                voices.find((v) => v.lang.startsWith('en') && v.localService) ??
+                voices.find((v) => v.lang.startsWith('en'));
+            if (preferred) utterance.voice = preferred;
+        }
+
+        window.speechSynthesis.speak(utterance);
+    }, [voiceEnabled, selectedVoiceIdx, availableVoices]);
+
+    const previewVoice = (idx: number) => {
+        if (!window.speechSynthesis) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance('Turn right in 200 meters.');
+        utterance.rate = 0.95;
+        utterance.volume = 1;
+        if (idx >= 0 && availableVoices[idx]) {
+            utterance.voice = availableVoices[idx];
+        }
+        window.speechSynthesis.speak(utterance);
+    };
+
+    // Announce route started
+    useEffect(() => {
+        if (status === 'in_progress' && me && nextStop) {
+            speak(`Route started. Head to stop ${nextStop.stop_no}. ${nextStop.stop_address ?? ''}`, true);
+        }
+        // Only run once when GPS first locks
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [status === 'in_progress' && !!me]);
+
+    // Find the upcoming step and speak turn-by-turn directions
     useEffect(() => {
         if (!me || navSteps.length === 0 || status !== 'in_progress') return;
 
@@ -377,23 +432,36 @@ export default function CollectorRoute({
         const step = navSteps[closestIdx];
         if (!step) return;
 
+        // Always show the current instruction text
         setCurrentInstruction(step.instruction);
 
-        // Speak when within 50m of a turn
-        if (closestDist < 50 && step.maneuver) {
+        // Only speak if this is a new step we haven't spoken yet
+        if (closestIdx === lastSpokenStepRef.current) return;
+
+        // Speak when within 80m of a turn that has a maneuver
+        if (closestDist < 80 && step.maneuver) {
+            lastSpokenStepRef.current = closestIdx;
             speak(`In ${step.distanceText}, ${step.instruction}`);
         }
-        // Also announce when very close (< 15m)
-        else if (closestDist < 15 && step.instruction) {
+        // Speak any instruction when very close
+        else if (closestDist < 20) {
+            lastSpokenStepRef.current = closestIdx;
             speak(step.instruction);
         }
     }, [me, navSteps, status, speak]);
 
+    // Reset spoken step when next stop changes (new directions fetched)
+    useEffect(() => {
+        lastSpokenStepRef.current = -1;
+    }, [nextStop?.id]);
+
     // Announce when arriving at a stop
     useEffect(() => {
         if (!me || !nextStop || status !== 'in_progress') return;
+        if (lastSpokenStopRef.current === nextStop.id) return;
         const dist = haversine(me, nextStop);
         if (dist < 30) {
+            lastSpokenStopRef.current = nextStop.id;
             speak(`Arriving at stop ${nextStop.stop_no}. ${nextStop.stop_address ?? ''}`);
         }
     }, [me, nextStop, status, speak]);
@@ -401,7 +469,7 @@ export default function CollectorRoute({
     // Announce when all stops are done
     useEffect(() => {
         if (status === 'in_progress' && remainingStops === 0) {
-            speak('All stops collected. You can now submit your report.');
+            speak('All stops collected. You can now submit your report.', true);
         }
     }, [remainingStops, status, speak]);
 
@@ -487,6 +555,14 @@ export default function CollectorRoute({
         setStatus('in_progress');
         router.reload({ only: ['plan'] });
         toast('success', 'Route started');
+
+        // Unlock speech synthesis on mobile (requires user gesture)
+        if (window.speechSynthesis) {
+            const unlock = new SpeechSynthesisUtterance('');
+            unlock.volume = 0;
+            window.speechSynthesis.speak(unlock);
+        }
+
         beginGpsWatch();
     };
 
@@ -566,21 +642,98 @@ export default function CollectorRoute({
                             <span>{plan.route_date}</span>
                         </div>
                     </div>
-                    {/* Voice toggle */}
+                    {/* Voice controls */}
                     {status === 'in_progress' && (
-                        <button
-                            onClick={() => {
-                                setVoiceEnabled((v) => !v);
-                                if (voiceEnabled) window.speechSynthesis?.cancel();
-                            }}
-                            className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
-                                voiceEnabled
-                                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
-                                    : 'bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500'
-                            }`}
-                        >
-                            {voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
-                        </button>
+                        <div className="relative flex items-center gap-1.5">
+                            {/* Voice picker trigger */}
+                            <button
+                                onClick={() => setShowVoicePicker((v) => !v)}
+                                className="flex h-9 items-center gap-1.5 rounded-full bg-neutral-100 px-3 text-neutral-600 transition-colors hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+                            >
+                                <ChevronRight size={14} className={`transition-transform ${showVoicePicker ? 'rotate-90' : ''}`} />
+                                <span className="text-[11px] font-semibold">
+                                    {selectedVoiceIdx >= 0 && availableVoices[selectedVoiceIdx]
+                                        ? availableVoices[selectedVoiceIdx].name.split(' ').slice(0, 2).join(' ')
+                                        : 'Auto'}
+                                </span>
+                            </button>
+
+                            {/* Voice picker dropdown (absolute) */}
+                            <AnimatePresence>
+                                {showVoicePicker && (
+                                    <>
+                                        {/* Backdrop to close */}
+                                        <div className="fixed inset-0 z-40" onClick={() => setShowVoicePicker(false)} />
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                                            transition={{ duration: 0.15 }}
+                                            className="absolute right-0 top-11 z-50 w-72 overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-xl shadow-black/10 dark:border-neutral-700 dark:bg-neutral-900 dark:shadow-black/40"
+                                        >
+                                            <div className="border-b border-neutral-100 px-4 py-2.5 dark:border-neutral-800">
+                                                <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Navigation Voice</p>
+                                            </div>
+                                            <div className="max-h-56 overflow-y-auto p-1.5">
+                                                {/* Auto option */}
+                                                <button
+                                                    onClick={() => { setSelectedVoiceIdx(-1); previewVoice(-1); setShowVoicePicker(false); }}
+                                                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                                                        selectedVoiceIdx === -1
+                                                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                                                            : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800/50'
+                                                    }`}
+                                                >
+                                                    <Volume2 size={14} className="shrink-0" />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-medium">Auto</p>
+                                                    </div>
+                                                    {selectedVoiceIdx === -1 && <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />}
+                                                </button>
+
+                                                {availableVoices.map((voice, idx) => (
+                                                    <button
+                                                        key={`${voice.name}-${voice.lang}`}
+                                                        onClick={() => { setSelectedVoiceIdx(idx); previewVoice(idx); setShowVoicePicker(false); }}
+                                                        className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                                                            selectedVoiceIdx === idx
+                                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                                                                : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800/50'
+                                                        }`}
+                                                    >
+                                                        <Volume2 size={14} className="shrink-0" />
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="truncate text-sm font-medium">{voice.name}</p>
+                                                            <p className="text-[10px] text-neutral-400">{voice.lang}</p>
+                                                        </div>
+                                                        {selectedVoiceIdx === idx && <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />}
+                                                    </button>
+                                                ))}
+
+                                                {availableVoices.length === 0 && (
+                                                    <p className="px-3 py-4 text-center text-xs text-neutral-400">No voices available</p>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    </>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Mute/unmute */}
+                            <button
+                                onClick={() => {
+                                    setVoiceEnabled((v) => !v);
+                                    if (voiceEnabled) window.speechSynthesis?.cancel();
+                                }}
+                                className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+                                    voiceEnabled
+                                        ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+                                        : 'bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500'
+                                }`}
+                            >
+                                {voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                            </button>
+                        </div>
                     )}
                     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                         status === 'in_progress'

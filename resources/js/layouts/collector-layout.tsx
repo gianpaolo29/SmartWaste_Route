@@ -10,7 +10,7 @@ export default function CollectorLayout({ children }: AppLayoutProps) {
         <div className="flex min-h-screen w-full flex-col bg-neutral-50 dark:bg-neutral-950">
             {!isMobile && <CollectorTopbar />}
 
-            <main className={`mx-auto flex w-full max-w-7xl flex-1 flex-col ${isMobile ? 'pb-24' : ''}`}>
+            <main className={`flex w-full flex-1 flex-col ${isMobile ? 'pb-24' : 'mx-auto max-w-7xl'}`}>
                 {children}
             </main>
 

@@ -239,8 +239,16 @@ function useSmoothPosition(target: { lat: number; lng: number } | null) {
 }
 
 /* ── Live location polling ── */
+type LiveData = {
+    lat: number | null;
+    lng: number | null;
+    updated_at: string | null;
+    status: string;
+    stops: { id: number; collection_status: string | null }[];
+};
+
 function useLiveLocation(routeId: number) {
-    const [loc, setLoc] = useState<{ lat: number | null; lng: number | null; updated_at: string | null; status: string } | null>(null);
+    const [loc, setLoc] = useState<LiveData | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -257,6 +265,7 @@ function useLiveLocation(routeId: number) {
                         lng: body.lng ?? null,
                         updated_at: body.updated_at,
                         status: body.status,
+                        stops: body.stops ?? [],
                     });
                 }
             } catch { /* ignore */ }
@@ -295,6 +304,18 @@ export default function ShowRoute({
     const isLive = currentStatus === 'in_progress';
     const [roadInfo, setRoadInfo] = useState<{ distance: number; duration: number; summary: string } | null>(null);
 
+    // Merge live stop statuses with plan stops
+    const liveStops = useMemo(() => {
+        if (!live?.stops || live.stops.length === 0) return plan.stops;
+        const statusMap = new globalThis.Map(live.stops.map((s) => [s.id, s.collection_status] as const));
+        return plan.stops.map((s) => ({
+            ...s,
+            collection_status: statusMap.get(s.id) ?? s.collection_status,
+        }));
+    }, [plan.stops, live?.stops]);
+
+    const collectedCount = liveStops.filter((s) => s.collection_status === 'collected').length;
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/admin/dashboard' },
         { title: 'Routes', href: '/admin/routes' },
@@ -302,16 +323,30 @@ export default function ShowRoute({
     ];
 
     const center = useMemo(() => {
-        if (plan.stops.length === 0) return { lat: 13.9333, lng: 120.7333 };
-        const lat = plan.stops.reduce((s, x) => s + x.lat, 0) / plan.stops.length;
-        const lng = plan.stops.reduce((s, x) => s + x.lng, 0) / plan.stops.length;
+        if (liveStops.length === 0) return { lat: 13.9333, lng: 120.7333 };
+        const lat = liveStops.reduce((s, x) => s + x.lat, 0) / liveStops.length;
+        const lng = liveStops.reduce((s, x) => s + x.lng, 0) / liveStops.length;
         return { lat, lng };
-    }, [plan.stops]);
+    }, [liveStops]);
 
-    // Find next uncollected stop (mirrors collector logic)
+    // Find nearest uncollected stop from collector's position
     const nextStop = useMemo(() => {
-        return plan.stops.find((s) => !s.collection_status) ?? null;
-    }, [plan.stops]);
+        const pending = liveStops.filter((s) => !s.collection_status);
+        if (pending.length === 0) return null;
+        if (!animatedPos) return pending[0];
+        return pending.reduce((closest, s) =>
+            haversine(animatedPos, s) < haversine(animatedPos, closest) ? s : closest
+        , pending[0]);
+    }, [liveStops, animatedPos]);
+
+    // Sort stops: done first, then uncollected sorted by distance from collector
+    const sortedStops = useMemo(() => {
+        const done = liveStops.filter((s) => !!s.collection_status);
+        const pending = liveStops.filter((s) => !s.collection_status);
+        if (!animatedPos || pending.length === 0) return liveStops;
+        const sorted = [...pending].sort((a, b) => haversine(animatedPos, a) - haversine(animatedPos, b));
+        return [...done, ...sorted];
+    }, [liveStops, animatedPos]);
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
@@ -428,14 +463,15 @@ export default function ShowRoute({
                         <Activity size={14} className="text-emerald-600 dark:text-emerald-400" />
                         <span className="text-xs font-semibold tracking-tight">Collection Stops</span>
                         <span className="ml-auto rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400">
-                            {plan.stops.length}
+                            {collectedCount}/{liveStops.length}
                         </span>
                     </div>
                     <div className="flex-1 overflow-y-auto">
                         <ol className="p-2">
-                            {plan.stops.map((s, i) => {
+                            {sortedStops.map((s, i) => {
                                 const isDone = !!s.collection_status;
                                 const isNext = nextStop?.id === s.id && isLive;
+                                const distFromCollector = animatedPos && !isDone ? haversine(animatedPos, s) : null;
 
                                 return (
                                     <li
@@ -457,7 +493,7 @@ export default function ShowRoute({
                                                 }`}>
                                                     {isDone ? <CheckCircle2 size={13} /> : s.stop_no}
                                                 </div>
-                                                {i < plan.stops.length - 1 && (
+                                                {i < sortedStops.length - 1 && (
                                                     <div className={`mt-1 h-4 w-px ${isDone ? 'bg-gray-200 dark:bg-gray-700' : 'bg-emerald-200 dark:bg-emerald-800/30'}`} />
                                                 )}
                                             </div>
@@ -480,13 +516,19 @@ export default function ShowRoute({
                                                     {isNext && (
                                                         <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
                                                             <Navigation size={9} />
-                                                            NEXT
+                                                            NEAREST
                                                         </span>
                                                     )}
                                                 </div>
-                                                <p className="mt-0.5 text-[11px] text-gray-400">
-                                                    {s.lat.toFixed(5)}, {s.lng.toFixed(5)}
-                                                </p>
+                                                <div className="mt-0.5 flex items-center gap-2 text-[11px] text-gray-400">
+                                                    <span>Stop #{s.stop_no}</span>
+                                                    {distFromCollector !== null && (
+                                                        <>
+                                                            <span className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                                                            <span className="font-medium text-blue-600 dark:text-blue-400">{formatDistance(distFromCollector)}</span>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </li>
@@ -514,8 +556,8 @@ export default function ShowRoute({
                             >
                                 <TuyBoundary />
 
-                                {/* Stop markers — same as collector */}
-                                {plan.stops.map((s) => {
+                                {/* Stop markers — live updated */}
+                                {liveStops.map((s) => {
                                     const isDone = !!s.collection_status;
                                     const isNext = nextStop?.id === s.id && isLive;
                                     return (
@@ -579,7 +621,7 @@ export default function ShowRoute({
                                     <MapFocus target={animatedPos} nextStop={nextStop ? { lat: nextStop.lat, lng: nextStop.lng } : null} />
                                 )}
 
-                                <RouteLine stops={plan.stops} />
+                                <RouteLine stops={liveStops} />
                             </Map>
                         </APIProvider>
                     ) : (

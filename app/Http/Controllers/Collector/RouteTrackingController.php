@@ -83,9 +83,11 @@ class RouteTrackingController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    // Public-ish endpoint admin polls for live location
+    // Public-ish endpoint admin polls for live location + stop statuses
     public function location(RoutePlan $route)
     {
+        $route->load(['stops' => fn ($q) => $q->orderBy('stop_no'), 'stops.collection']);
+
         return response()->json([
             'lat' => $route->current_lat ? (float) $route->current_lat : null,
             'lng' => $route->current_lng ? (float) $route->current_lng : null,
@@ -93,6 +95,10 @@ class RouteTrackingController extends Controller
             'status' => $route->status,
             'started_at' => $route->started_at?->toIso8601String(),
             'finished_at' => $route->finished_at?->toIso8601String(),
+            'stops' => $route->stops->map(fn ($s) => [
+                'id' => $s->id,
+                'collection_status' => $s->collection?->status,
+            ]),
         ]);
     }
 }
