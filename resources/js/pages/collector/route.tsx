@@ -296,9 +296,26 @@ export default function CollectorRoute({
         return { lat, lng };
     }, [stops]);
 
+    // Sort uncollected stops by distance from current position
+    const sortedStops = useMemo(() => {
+        const done = stops.filter((s) => !!s.collection_status);
+        const pending = stops.filter((s) => !s.collection_status);
+        if (!me || pending.length === 0) return stops;
+
+        // Sort pending by distance from truck (nearest first)
+        const sorted = [...pending].sort((a, b) => haversine(me, a) - haversine(me, b));
+        return [...done, ...sorted];
+    }, [stops, me]);
+
     const nextStop = useMemo(() => {
-        return stops.find((s) => !s.collection_status) ?? null;
-    }, [stops]);
+        if (!me) return stops.find((s) => !s.collection_status) ?? null;
+        const pending = stops.filter((s) => !s.collection_status);
+        if (pending.length === 0) return null;
+        // Nearest uncollected stop
+        return pending.reduce((closest, s) =>
+            haversine(me, s) < haversine(me, closest) ? s : closest
+        , pending[0]);
+    }, [stops, me]);
 
     const navInfo = useMemo(() => {
         if (!me || !nextStop) return null;
@@ -881,20 +898,22 @@ export default function CollectorRoute({
                         </span>
                     </div>
 
-                    {/* Stops — one by one cards */}
+                    {/* Stops — one by one cards, sorted by nearest */}
                     <div className="space-y-3">
-                        {stops.map((s) => {
+                        {sortedStops.map((s, idx) => {
                             const isDone = !!s.collection_status;
                             const isNext = nextStop?.id === s.id && status === 'in_progress';
                             const badge = s.collection_status ? STATUS_BADGE[s.collection_status] : null;
                             const BadgeIcon = badge?.icon;
+                            const distFromMe = me && !isDone ? haversine(me, s) : null;
 
                             return (
                                 <motion.div
                                     key={s.id}
+                                    layout
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: s.stop_no * 0.03 }}
+                                    transition={{ delay: idx * 0.03, layout: { type: 'spring', stiffness: 300, damping: 30 } }}
                                     className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition-all dark:bg-neutral-900 ${
                                         isNext
                                             ? 'border-blue-200 ring-2 ring-blue-100 dark:border-blue-800/40 dark:ring-blue-900/20'
@@ -930,14 +949,20 @@ export default function CollectorRoute({
                                                 {isNext && (
                                                     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
                                                         <Navigation size={9} />
-                                                        NEXT
+                                                        NEAREST
                                                     </span>
                                                 )}
                                             </div>
 
-                                            <p className="mt-0.5 text-xs text-neutral-400">
-                                                Stop #{s.stop_no}
-                                            </p>
+                                            <div className="mt-0.5 flex items-center gap-2 text-xs text-neutral-400">
+                                                <span>Stop #{s.stop_no}</span>
+                                                {distFromMe !== null && (
+                                                    <>
+                                                        <span className="h-1 w-1 rounded-full bg-neutral-300 dark:bg-neutral-600" />
+                                                        <span className="font-medium text-blue-600 dark:text-blue-400">{formatDistance(distFromMe)}</span>
+                                                    </>
+                                                )}
+                                            </div>
 
                                             {/* Action buttons for uncollected stops */}
                                             {status === 'in_progress' && !s.collection_status && (
