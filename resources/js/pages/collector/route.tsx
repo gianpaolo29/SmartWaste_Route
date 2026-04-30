@@ -30,21 +30,55 @@ type Plan = {
     stops: Stop[];
 };
 
-function csrf() {
-    return (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.content ?? '';
+function getCsrfToken() {
+    // Try meta tag first
+    const meta = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.content;
+    if (meta) return meta;
+    // Fallback: read from XSRF-TOKEN cookie (Laravel sets this automatically)
+    const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
 }
 
-const post = (path: string, body?: object) =>
-    fetch(path, {
+const post = async (path: string, body?: object) => {
+    const token = getCsrfToken();
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+    };
+    // Use X-XSRF-TOKEN for cookie-based token, X-CSRF-TOKEN for meta-based
+    if (token.length > 40) {
+        headers['X-XSRF-TOKEN'] = token;
+    } else {
+        headers['X-CSRF-TOKEN'] = token;
+    }
+
+    const res = await fetch(path, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrf(),
-            Accept: 'application/json',
-        },
+        headers,
         credentials: 'include',
         body: body ? JSON.stringify(body) : undefined,
     });
+
+    // If CSRF mismatch, refresh token and retry once
+    if (res.status === 419) {
+        await fetch('/sanctum/csrf-cookie', { credentials: 'include' }).catch(() => {});
+        const newToken = getCsrfToken();
+        const retryHeaders: Record<string, string> = { ...headers };
+        if (newToken.length > 40) {
+            retryHeaders['X-XSRF-TOKEN'] = newToken;
+        } else {
+            retryHeaders['X-CSRF-TOKEN'] = newToken;
+        }
+        return fetch(path, {
+            method: 'POST',
+            headers: retryHeaders,
+            credentials: 'include',
+            body: body ? JSON.stringify(body) : undefined,
+        });
+    }
+
+    return res;
+};
 
 /* ── RouteLine: draws the full collection route ── */
 function RouteLine({ stops }: { stops: Stop[] }) {
