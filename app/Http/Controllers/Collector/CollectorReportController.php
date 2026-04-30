@@ -58,6 +58,7 @@ class CollectorReportController extends Controller
 
         return Inertia::render('collector/reports/create', [
             'routes' => $routes,
+            'route_id' => $request->query('route_id'),
         ]);
     }
 

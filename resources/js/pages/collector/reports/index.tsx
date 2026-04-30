@@ -1,6 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
 import CollectorLayout from '@/layouts/collector-layout';
-import type { BreadcrumbItem } from '@/types';
 
 type Report = {
     id: number;
@@ -15,14 +14,9 @@ type Report = {
     zone: { name: string; barangay: string | null } | null;
 };
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/collector/dashboard' },
-    { title: 'Reports', href: '/collector/reports' },
-];
-
 export default function ReportsIndex({ reports }: { reports: Report[] }) {
     return (
-        <CollectorLayout breadcrumbs={breadcrumbs}>
+        <CollectorLayout>
             <Head title="Collection Reports" />
             <div className="space-y-4 p-4">
                 <div className="flex items-center justify-between">

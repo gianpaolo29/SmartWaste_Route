@@ -1,17 +1,20 @@
-import { AppContent } from '@/components/app-content';
-import { AppShell } from '@/components/app-shell';
-import { AppSidebarHeader } from '@/components/app-sidebar-header';
-import { CollectorSidebar } from '@/components/collector-sidebar';
+import { CollectorBottombar } from '@/components/collector-bottombar';
+import { CollectorTopbar } from '@/components/collector-topbar';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { AppLayoutProps } from '@/types';
 
-export default function CollectorLayout({ children, breadcrumbs = [] }: AppLayoutProps) {
+export default function CollectorLayout({ children }: AppLayoutProps) {
+    const isMobile = useIsMobile();
+
     return (
-        <AppShell variant="sidebar">
-            <CollectorSidebar />
-            <AppContent variant="sidebar" className="overflow-x-hidden">
-                <AppSidebarHeader breadcrumbs={breadcrumbs} />
+        <div className="flex min-h-screen w-full flex-col bg-neutral-50 dark:bg-neutral-950">
+            {!isMobile && <CollectorTopbar />}
+
+            <main className={`mx-auto flex w-full max-w-7xl flex-1 flex-col ${isMobile ? 'pb-24' : ''}`}>
                 {children}
-            </AppContent>
-        </AppShell>
+            </main>
+
+            {isMobile && <CollectorBottombar />}
+        </div>
     );
 }

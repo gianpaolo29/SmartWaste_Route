@@ -1,6 +1,5 @@
 import { Head, useForm, Link } from '@inertiajs/react';
 import CollectorLayout from '@/layouts/collector-layout';
-import type { BreadcrumbItem } from '@/types';
 import type { FormEventHandler } from 'react';
 
 type RouteOption = {
@@ -9,15 +8,9 @@ type RouteOption = {
     zone: string;
 };
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/collector/dashboard' },
-    { title: 'Reports', href: '/collector/reports' },
-    { title: 'New Report', href: '/collector/reports/create' },
-];
-
-export default function ReportsCreate({ routes }: { routes: RouteOption[] }) {
+export default function ReportsCreate({ routes, route_id }: { routes: RouteOption[]; route_id?: string }) {
     const { data, setData, post, processing, errors } = useForm({
-        route_plan_id: '',
+        route_plan_id: route_id ?? '',
         mixed_waste: '',
         biodegradable: '',
         recyclable: '',
@@ -39,7 +32,7 @@ export default function ReportsCreate({ routes }: { routes: RouteOption[] }) {
         (parseFloat(data.solid_waste) || 0);
 
     return (
-        <CollectorLayout breadcrumbs={breadcrumbs}>
+        <CollectorLayout>
             <Head title="New Collection Report" />
             <div className="mx-auto max-w-2xl space-y-6 p-4">
                 <div className="flex items-center justify-between">

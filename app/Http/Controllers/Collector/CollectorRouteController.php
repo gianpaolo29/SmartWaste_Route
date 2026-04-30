@@ -17,6 +17,35 @@ class CollectorRouteController extends Controller
         $userId = $request->user()->id;
         $status = $request->query('status');
 
+        $mapRoute = fn ($p) => [
+            'id' => $p->id,
+            'route_date' => $p->route_date?->toDateString(),
+            'status' => $p->status,
+            'zone' => $p->zone ? [
+                'name' => $p->zone->name,
+                'barangay' => $p->zone->barangayNames(),
+            ] : null,
+            'stops_count' => $p->stops->count(),
+        ];
+
+        // Today's routes
+        $today = RoutePlan::with(['zone.barangays', 'stops'])
+            ->where('collector_user_id', $userId)
+            ->whereDate('route_date', today())
+            ->orderBy('id')
+            ->get()
+            ->map($mapRoute);
+
+        // Upcoming routes
+        $upcoming = RoutePlan::with(['zone.barangays', 'stops'])
+            ->where('collector_user_id', $userId)
+            ->whereDate('route_date', '>', today())
+            ->orderBy('route_date')
+            ->limit(10)
+            ->get()
+            ->map($mapRoute);
+
+        // All routes (with optional filter)
         $q = RoutePlan::with(['zone.barangays', 'stops'])
             ->where('collector_user_id', $userId)
             ->orderByDesc('route_date')
@@ -26,18 +55,11 @@ class CollectorRouteController extends Controller
             $q->where('status', $status);
         }
 
-        $routes = $q->get()->map(fn ($p) => [
-            'id' => $p->id,
-            'route_date' => $p->route_date?->toDateString(),
-            'status' => $p->status,
-            'zone' => $p->zone ? [
-                'name' => $p->zone->name,
-                'barangay' => $p->zone->barangayNames(),
-            ] : null,
-            'stops_count' => $p->stops->count(),
-        ]);
+        $routes = $q->get()->map($mapRoute);
 
         return Inertia::render('collector/routes/index', [
+            'today' => $today,
+            'upcoming' => $upcoming,
             'routes' => $routes,
             'filter' => $status,
         ]);

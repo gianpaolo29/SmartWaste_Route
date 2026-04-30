@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Collector;
 
 use App\Http\Controllers\Controller;
+use App\Models\CollectionReport;
 use App\Models\RoutePlan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,52 +14,63 @@ class CollectorDashboardController extends Controller
     {
         $userId = $request->user()->id;
 
-        // If a route is currently in progress, jump straight to it
-        $active = RoutePlan::where('collector_user_id', $userId)
-            ->where('status', 'in_progress')
-            ->latest('id')
-            ->first();
+        $completedRoutes = RoutePlan::where('collector_user_id', $userId)
+            ->where('status', 'completed');
 
-        if ($active) {
-            return redirect()->route('collector.routes.show', $active->id);
-        }
+        $reports = CollectionReport::where('collector_user_id', $userId);
 
-        $today = RoutePlan::with(['zone.barangays', 'stops'])
-            ->where('collector_user_id', $userId)
-            ->whereDate('route_date', today())
-            ->orderBy('id')
-            ->get();
-
-        $upcoming = RoutePlan::with(['zone.barangays'])
-            ->where('collector_user_id', $userId)
-            ->whereDate('route_date', '>', today())
-            ->orderBy('route_date')
-            ->limit(5)
-            ->get();
+        $totalWaste = (clone $reports)->selectRaw(
+            'COALESCE(SUM(mixed_waste + biodegradable + recyclable + residual + solid_waste), 0) as total'
+        )->value('total');
 
         $stats = [
-            'today_count' => $today->count(),
-            'upcoming_count' => RoutePlan::where('collector_user_id', $userId)
+            'today_count'     => RoutePlan::where('collector_user_id', $userId)
+                ->whereDate('route_date', today())->count(),
+            'upcoming_count'  => RoutePlan::where('collector_user_id', $userId)
                 ->whereDate('route_date', '>', today())->count(),
-            'completed_count' => RoutePlan::where('collector_user_id', $userId)
-                ->where('status', 'completed')->count(),
+            'completed_count' => (clone $completedRoutes)->count(),
+            'reports_count'   => (clone $reports)->count(),
+            'total_waste'     => round($totalWaste, 1),
+            'total_stops'     => (clone $completedRoutes)->withCount('stops')->get()->sum('stops_count'),
         ];
 
-        $mapRoute = fn ($p) => [
-            'id' => $p->id,
-            'route_date' => $p->route_date?->toDateString(),
-            'status' => $p->status,
-            'zone' => $p->zone ? [
-                'name' => $p->zone->name,
-                'barangay' => $p->zone->barangayNames(),
+        // Recent reports (last 5)
+        $recentReports = CollectionReport::with('routePlan.zone.barangays')
+            ->where('collector_user_id', $userId)
+            ->orderByDesc('report_date')
+            ->limit(5)
+            ->get()
+            ->map(fn ($r) => [
+                'id'          => $r->id,
+                'report_date' => $r->report_date->toDateString(),
+                'total'       => round($r->mixed_waste + $r->biodegradable + $r->recyclable + $r->residual + $r->solid_waste, 1),
+                'zone'        => $r->routePlan?->zone?->name,
+            ]);
+
+        // Next route (closest upcoming or today)
+        $nextRoute = RoutePlan::with(['zone.barangays', 'stops'])
+            ->where('collector_user_id', $userId)
+            ->whereIn('status', ['planned', 'in_progress'])
+            ->whereDate('route_date', '>=', today())
+            ->orderBy('route_date')
+            ->orderBy('id')
+            ->first();
+
+        $next = $nextRoute ? [
+            'id'         => $nextRoute->id,
+            'route_date' => $nextRoute->route_date?->toDateString(),
+            'status'     => $nextRoute->status,
+            'zone'       => $nextRoute->zone ? [
+                'name'     => $nextRoute->zone->name,
+                'barangay' => $nextRoute->zone->barangayNames(),
             ] : null,
-            'stops_count' => $p->stops?->count() ?? 0,
-        ];
+            'stops_count' => $nextRoute->stops->count(),
+        ] : null;
 
         return Inertia::render('collector/dashboard', [
-            'today' => $today->map($mapRoute),
-            'upcoming' => $upcoming->map($mapRoute),
-            'stats' => $stats,
+            'stats'         => $stats,
+            'recentReports' => $recentReports,
+            'nextRoute'     => $next,
         ]);
     }
 }

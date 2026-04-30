@@ -1,6 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
 import CollectorLayout from '@/layouts/collector-layout';
-import type { BreadcrumbItem } from '@/types';
 
 type Report = {
     id: number;
@@ -17,12 +16,6 @@ type Report = {
     created_at: string;
 };
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/collector/dashboard' },
-    { title: 'Reports', href: '/collector/reports' },
-    { title: 'Report Details', href: '#' },
-];
-
 export default function ReportsShow({ report }: { report: Report }) {
     const wasteItems = [
         { label: 'Mixed Waste', value: report.mixed_waste, color: 'bg-yellow-100 text-yellow-800' },
@@ -33,7 +26,7 @@ export default function ReportsShow({ report }: { report: Report }) {
     ];
 
     return (
-        <CollectorLayout breadcrumbs={breadcrumbs}>
+        <CollectorLayout>
             <Head title="Report Details" />
             <div className="mx-auto max-w-2xl space-y-6 p-4">
                 <div className="flex items-center justify-between">

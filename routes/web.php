@@ -65,6 +65,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
 Route::middleware(['auth', 'role:collector'])->prefix('collector')->name('collector.')->group(function () {
     Route::get('/dashboard', \App\Http\Controllers\Collector\CollectorDashboardController::class)->name('dashboard');
+    Route::get('/account', [\App\Http\Controllers\Collector\CollectorAccountController::class, 'index'])->name('account');
 
     Route::get('/routes', [\App\Http\Controllers\Collector\CollectorRouteController::class, 'index'])->name('routes.index');
     Route::get('/routes/{route}', [\App\Http\Controllers\Collector\RouteTrackingController::class, 'show'])->name('routes.show');

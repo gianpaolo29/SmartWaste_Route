@@ -100,11 +100,92 @@ export default function Login({ status, canResetPassword, canRegister }: Props) 
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/90 backdrop-blur-md dark:bg-[#080c08]/90"
                     >
-                        <div className="relative">
-                            <div className="h-20 w-20 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-500" />
-                            <CheckCircle2 className="absolute inset-0 m-auto text-emerald-600" size={30} />
+                        {/* Road scene */}
+                        <div className="relative w-72 h-40 mb-6">
+                            {/* Road */}
+                            <div className="absolute bottom-6 left-0 right-0 h-10 rounded-full bg-gray-300 dark:bg-gray-700 overflow-hidden">
+                                {/* Road dashes */}
+                                <motion.div
+                                    className="absolute top-1/2 -translate-y-1/2 flex gap-4"
+                                    animate={{ x: [0, -48] }}
+                                    transition={{ duration: 0.4, repeat: Infinity, ease: 'linear' }}
+                                >
+                                    {Array.from({ length: 16 }).map((_, i) => (
+                                        <div key={i} className="w-6 h-1 rounded bg-white/60 dark:bg-white/20 shrink-0" />
+                                    ))}
+                                </motion.div>
+                            </div>
+
+                            {/* Truck */}
+                            <motion.div
+                                className="absolute bottom-10 left-1/2 -translate-x-1/2"
+                                animate={{ y: [0, -3, 0, -2, 0] }}
+                                transition={{ duration: 0.6, repeat: Infinity, ease: 'easeInOut' }}
+                            >
+                                {/* Exhaust puffs */}
+                                <motion.div
+                                    className="absolute -left-6 top-6 h-3 w-3 rounded-full bg-gray-300 dark:bg-gray-600"
+                                    animate={{ opacity: [0, 0.7, 0], scale: [0.3, 1.2, 0.5], x: [-2, -14], y: [0, -8] }}
+                                    transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
+                                />
+                                <motion.div
+                                    className="absolute -left-4 top-8 h-2 w-2 rounded-full bg-gray-200 dark:bg-gray-600"
+                                    animate={{ opacity: [0, 0.5, 0], scale: [0.3, 1, 0.4], x: [-2, -10], y: [0, -6] }}
+                                    transition={{ duration: 1, repeat: Infinity, ease: 'easeOut', delay: 0.5 }}
+                                />
+
+                                {/* Truck body */}
+                                <div className="relative">
+                                    {/* Cargo area */}
+                                    <div className="w-16 h-12 rounded-lg bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-lg relative">
+                                        <div className="absolute inset-1 rounded-md border border-emerald-400/30" />
+                                        <Recycle size={14} className="absolute inset-0 m-auto text-white/80" />
+                                    </div>
+                                    {/* Cabin */}
+                                    <div className="absolute -right-8 top-2 w-9 h-10 rounded-t-lg rounded-br-lg bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-lg">
+                                        {/* Windshield */}
+                                        <div className="absolute top-1.5 right-1 w-5 h-4 rounded-t-md bg-sky-200/80 dark:bg-sky-300/60" />
+                                    </div>
+                                    {/* Wheels */}
+                                    <motion.div
+                                        className="absolute -bottom-3 left-1.5 h-5 w-5 rounded-full bg-gray-800 dark:bg-gray-200 border-2 border-gray-600 dark:border-gray-400 shadow-md"
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 0.4, repeat: Infinity, ease: 'linear' }}
+                                    >
+                                        <div className="absolute inset-1 rounded-full border border-dashed border-gray-400 dark:border-gray-500" />
+                                    </motion.div>
+                                    <motion.div
+                                        className="absolute -bottom-3 right-[-22px] h-5 w-5 rounded-full bg-gray-800 dark:bg-gray-200 border-2 border-gray-600 dark:border-gray-400 shadow-md"
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 0.4, repeat: Infinity, ease: 'linear' }}
+                                    >
+                                        <div className="absolute inset-1 rounded-full border border-dashed border-gray-400 dark:border-gray-500" />
+                                    </motion.div>
+                                </div>
+                            </motion.div>
+
+                            {/* Floating leaves */}
+                            {[0, 1, 2].map((i) => (
+                                <motion.div
+                                    key={i}
+                                    className="absolute top-2"
+                                    style={{ left: `${20 + i * 30}%` }}
+                                    animate={{ y: [0, 40, 80], x: [0, -15, -30], rotate: [0, 180, 360], opacity: [0, 1, 0] }}
+                                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: i * 0.8 }}
+                                >
+                                    <Leaf size={12} className="text-emerald-400" />
+                                </motion.div>
+                            ))}
                         </div>
-                        <p className="mt-6 text-xl font-semibold text-[#1b4332] dark:text-white">Creating your account...</p>
+
+                        <motion.p
+                            className="text-xl font-semibold text-[#1b4332] dark:text-white"
+                            animate={{ opacity: [1, 0.5, 1] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                            Creating your account...
+                        </motion.p>
+                        <p className="mt-2 text-sm text-gray-400">Getting your route ready</p>
                     </motion.div>
                 )}
             </AnimatePresence>
