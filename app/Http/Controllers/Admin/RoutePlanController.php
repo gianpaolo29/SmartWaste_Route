@@ -120,7 +120,11 @@ class RoutePlanController extends Controller
 
     public function show(RoutePlan $route)
     {
-        $route->load(['zone.barangays', 'collector', 'stops' => fn ($q) => $q->orderBy('stop_no')]);
+        $route->load(['zone.barangays', 'collector', 'stops' => fn ($q) => $q->orderBy('stop_no'), 'stops.collection']);
+
+        $collectors = User::where('role', 'collector')
+            ->where('status', 'active')
+            ->get(['id', 'name']);
 
         return Inertia::render('admin/routes/show', [
             'plan' => [
@@ -142,9 +146,44 @@ class RoutePlanController extends Controller
                     'stop_address' => $s->stop_address,
                     'lat' => (float) $s->lat,
                     'lng' => (float) $s->lng,
+                    'collection_status' => $s->collection?->status,
                 ]),
             ],
+            'collectors' => $collectors,
             'mapsApiKey' => config('services.google.maps_api_key'),
         ]);
+    }
+
+    public function update(Request $request, RoutePlan $route)
+    {
+        $data = $request->validate([
+            'route_date' => ['sometimes', 'date'],
+            'collector_user_id' => ['nullable', 'exists:users,id'],
+            'status' => ['sometimes', 'in:planned,cancelled'],
+        ]);
+
+        // Only allow editing planned routes
+        if ($route->status !== 'planned' && !isset($data['status'])) {
+            return back()->withErrors(['status' => 'Only planned routes can be edited.']);
+        }
+
+        $route->update($data);
+
+        return back();
+    }
+
+    public function destroy(RoutePlan $route)
+    {
+        // Prevent deleting routes that are in progress
+        if ($route->status === 'in_progress') {
+            return back()->withErrors(['status' => 'Cannot delete a route that is in progress.']);
+        }
+
+        DB::transaction(function () use ($route) {
+            $route->stops()->delete();
+            $route->delete();
+        });
+
+        return redirect()->route('admin.routes.index');
     }
 }

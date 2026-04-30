@@ -13,29 +13,80 @@ class CollectorReportController extends Controller
     public function index(Request $request)
     {
         $userId = $request->user()->id;
+        $period = $request->query('period', 'all');
+        $now = now();
 
-        $reports = CollectionReport::with('routePlan.zone.barangays')
+        $query = CollectionReport::with('routePlan.zone.barangays')
             ->where('collector_user_id', $userId)
-            ->orderByDesc('report_date')
+            ->orderByDesc('report_date');
+
+        match ($period) {
+            'today' => $query->whereDate('report_date', $now->toDateString()),
+            'week' => $query->whereBetween('report_date', [$now->startOfWeek()->toDateString(), $now->copy()->endOfWeek()->toDateString()]),
+            'month' => $query->whereMonth('report_date', $now->month)->whereYear('report_date', $now->year),
+            default => null,
+        };
+
+        // Clone query for summary (before pagination)
+        $summaryQuery = clone $query;
+
+        $total = fn ($r) => $r->mixed_waste + $r->biodegradable + $r->recyclable + $r->residual + $r->solid_waste;
+
+        // Summary from all matching records
+        $allItems = $summaryQuery->get();
+        $summary = [
+            'count' => $allItems->count(),
+            'total_waste' => round($allItems->sum($total), 1),
+            'mixed' => round($allItems->sum('mixed_waste'), 1),
+            'biodegradable' => round($allItems->sum('biodegradable'), 1),
+            'recyclable' => round($allItems->sum('recyclable'), 1),
+            'residual' => round($allItems->sum('residual'), 1),
+            'solid' => round($allItems->sum('solid_waste'), 1),
+        ];
+
+        // Paginate
+        $paginated = $query->paginate(20)->withQueryString();
+
+        $reports = collect($paginated->items())->map(fn ($r) => [
+            'id' => $r->id,
+            'report_date' => $r->report_date->toDateString(),
+            'mixed_waste' => $r->mixed_waste,
+            'biodegradable' => $r->biodegradable,
+            'recyclable' => $r->recyclable,
+            'residual' => $r->residual,
+            'solid_waste' => $r->solid_waste,
+            'total' => round($total($r), 2),
+            'notes' => $r->notes,
+            'zone' => $r->routePlan?->zone ? [
+                'name' => $r->routePlan->zone->name,
+                'barangay' => $r->routePlan->zone->barangayNames(),
+            ] : null,
+        ]);
+
+        // Available routes for new report modal
+        $availableRoutes = RoutePlan::with('zone.barangays')
+            ->where('collector_user_id', $userId)
+            ->where('status', 'completed')
+            ->whereDoesntHave('collectionReport')
+            ->orderByDesc('route_date')
             ->get()
-            ->map(fn ($r) => [
-                'id' => $r->id,
-                'report_date' => $r->report_date->toDateString(),
-                'mixed_waste' => $r->mixed_waste,
-                'biodegradable' => $r->biodegradable,
-                'recyclable' => $r->recyclable,
-                'residual' => $r->residual,
-                'solid_waste' => $r->solid_waste,
-                'total' => $r->mixed_waste + $r->biodegradable + $r->recyclable + $r->residual + $r->solid_waste,
-                'notes' => $r->notes,
-                'zone' => $r->routePlan?->zone ? [
-                    'name' => $r->routePlan->zone->name,
-                    'barangay' => $r->routePlan->zone->barangayNames(),
-                ] : null,
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'route_date' => $p->route_date?->toDateString(),
+                'zone' => $p->zone ? $p->zone->name . ' (' . ($p->zone->barangayNames() ?: '—') . ')' : '—',
             ]);
 
         return Inertia::render('collector/reports/index', [
             'reports' => $reports,
+            'summary' => $summary,
+            'period' => $period,
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'total' => $paginated->total(),
+            ],
+            'availableRoutes' => $availableRoutes,
+            'preselectedRouteId' => $request->query('route_id'),
         ]);
     }
 

@@ -27,7 +27,11 @@ class AdminListController extends Controller
             'active_routes' => \App\Models\RoutePlan::where('status', 'in_progress')->count(),
             'completed_routes' => \App\Models\RoutePlan::where('status', 'completed')->count(),
             'total_barangays' => Barangay::count(),
-            'reports' => MissedPickupReport::count(),
+            'open_reports' => MissedPickupReport::where('status', 'open')->count(),
+            'total_reports' => MissedPickupReport::count(),
+            'today_routes' => \App\Models\RoutePlan::whereDate('route_date', today())->count(),
+            'total_waste' => round(CollectionReport::selectRaw('COALESCE(SUM(mixed_waste + biodegradable + recyclable + residual + solid_waste), 0) as t')->value('t'), 1),
+            'total_stops_served' => \App\Models\Collection::where('status', 'collected')->count(),
         ];
 
         $recentRoutes = \App\Models\RoutePlan::with(['zone.barangays', 'collector'])
@@ -43,9 +47,55 @@ class AdminListController extends Controller
                 'collector' => $p->collector?->name,
             ]);
 
+        // Recent missed pickup reports
+        $recentReports = MissedPickupReport::with(['resident', 'zone.barangays'])
+            ->where('status', 'open')
+            ->orderByDesc('report_datetime')
+            ->limit(5)
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'description' => $r->description,
+                'status' => $r->status,
+                'report_datetime' => $r->report_datetime?->toDateTimeString(),
+                'resident' => $r->resident?->name,
+                'zone' => $r->zone?->name,
+            ]);
+
+        // Collector performance
+        $collectorPerformance = User::where('role', 'collector')
+            ->where('status', 'active')
+            ->withCount([
+                'assignedRoutePlans as completed_count' => fn ($q) => $q->where('status', 'completed'),
+                'assignedRoutePlans as total_count',
+            ])
+            ->get()
+            ->map(fn ($u) => [
+                'name' => $u->name,
+                'completed' => $u->completed_count,
+                'total' => $u->total_count,
+                'rate' => $u->total_count > 0 ? round(($u->completed_count / $u->total_count) * 100) : 0,
+            ])
+            ->sortByDesc('completed')
+            ->values()
+            ->take(5);
+
+        // Weekly waste trend (last 7 days)
+        $wasteTrend = CollectionReport::where('report_date', '>=', now()->subDays(6)->toDateString())
+            ->get()
+            ->groupBy(fn ($r) => $r->report_date->format('D'))
+            ->map(fn ($group, $day) => [
+                'day' => $day,
+                'total' => round($group->sum(fn ($r) => $r->mixed_waste + $r->biodegradable + $r->recyclable + $r->residual + $r->solid_waste), 1),
+            ])
+            ->values();
+
         return Inertia::render('admin/dashboard', [
             'stats' => $stats,
             'recentRoutes' => $recentRoutes,
+            'recentReports' => $recentReports,
+            'collectorPerformance' => $collectorPerformance,
+            'wasteTrend' => $wasteTrend,
         ]);
     }
 
@@ -151,6 +201,15 @@ class AdminListController extends Controller
 
     public function destroyZone(Zone $zone)
     {
+        // Prevent deleting zones with active routes
+        $activeRoutes = \App\Models\RoutePlan::where('zone_id', $zone->id)
+            ->whereIn('status', ['planned', 'in_progress'])
+            ->count();
+
+        if ($activeRoutes > 0) {
+            return back()->withErrors(['zone' => "Cannot delete zone with {$activeRoutes} active route(s). Cancel or complete them first."]);
+        }
+
         $zone->delete();
         return back();
     }
@@ -422,24 +481,52 @@ class AdminListController extends Controller
         ]);
     }
 
-    public function reports()
+    public function reports(Request $request)
     {
-        $items = MissedPickupReport::with(['resident', 'zone.barangays'])
-            ->orderByDesc('report_datetime')
-            ->get()
-            ->map(fn ($r) => [
-                'id' => $r->id,
-                'description' => $r->description,
-                'status' => $r->status,
-                'report_datetime' => $r->report_datetime?->toDateTimeString(),
-                'location_text' => $r->location_text,
-                'resident' => $r->resident?->name,
-                'zone' => $r->zone ? [
-                    'name' => $r->zone->name,
-                    'barangay' => $r->zone->barangayNames(),
-                ] : null,
-            ]);
+        $filter = $request->query('status');
 
-        return Inertia::render('admin/reports/index', ['items' => $items]);
+        $query = MissedPickupReport::with(['resident', 'zone.barangays'])
+            ->orderByDesc('report_datetime');
+
+        if ($filter) {
+            $query->where('status', $filter);
+        }
+
+        $items = $query->get()->map(fn ($r) => [
+            'id' => $r->id,
+            'description' => $r->description,
+            'status' => $r->status,
+            'report_datetime' => $r->report_datetime?->toDateTimeString(),
+            'location_text' => $r->location_text,
+            'resident' => $r->resident?->name,
+            'zone' => $r->zone ? [
+                'name' => $r->zone->name,
+                'barangay' => $r->zone->barangayNames(),
+            ] : null,
+        ]);
+
+        $stats = [
+            'total' => MissedPickupReport::count(),
+            'open' => MissedPickupReport::where('status', 'open')->count(),
+            'in_progress' => MissedPickupReport::where('status', 'in_progress')->count(),
+            'resolved' => MissedPickupReport::where('status', 'resolved')->count(),
+        ];
+
+        return Inertia::render('admin/reports/index', [
+            'items' => $items,
+            'stats' => $stats,
+            'filter' => $filter ?? '',
+        ]);
+    }
+
+    public function updateReportStatus(Request $request, MissedPickupReport $report)
+    {
+        $data = $request->validate([
+            'status' => ['required', 'in:open,in_progress,resolved'],
+        ]);
+
+        $report->update(['status' => $data['status']]);
+
+        return back();
     }
 }

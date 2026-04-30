@@ -1,11 +1,12 @@
 import { Link } from '@inertiajs/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Home, Route, User } from 'lucide-react';
+import { ClipboardList, Home, Route, User } from 'lucide-react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 
 const tabs = [
     { title: 'Home', href: '/collector/dashboard', icon: Home },
     { title: 'Routes', href: '/collector/routes', icon: Route },
+    { title: 'Reports', href: '/collector/reports', icon: ClipboardList },
     { title: 'Profile', href: '/collector/account', icon: User },
 ];
 

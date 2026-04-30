@@ -1,5 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { AlertTriangle, ChevronDown, Home, LogOut, Palette, Truck, User } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { AlertTriangle, ChevronDown, Home, LogOut, Truck, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     DropdownMenu,
@@ -35,13 +36,22 @@ export function ResidentTopbar() {
     };
 
     return (
-        <header className="sticky top-0 z-40 w-full border-b border-neutral-200/50 bg-white/80 backdrop-blur-xl dark:border-white/[0.06] dark:bg-neutral-950/80">
+        <motion.header
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="sticky top-0 z-40 w-full border-b border-neutral-200/50 bg-white/80 backdrop-blur-xl dark:border-white/[0.06] dark:bg-neutral-950/80"
+        >
             <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:px-6">
                 {/* Logo */}
-                <Link href="/resident/dashboard" className="mr-6 flex items-center gap-2.5" prefetch>
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20">
+                <Link href="/resident/dashboard" className="group mr-6 flex items-center gap-2.5" prefetch>
+                    <motion.div
+                        whileHover={{ scale: 1.05, rotate: -3 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20 transition-shadow group-hover:shadow-lg group-hover:shadow-emerald-600/30"
+                    >
                         <Truck size={18} strokeWidth={2.2} />
-                    </div>
+                    </motion.div>
                     <div className="hidden sm:block">
                         <p className="text-sm font-bold leading-tight text-neutral-900 dark:text-white">SmartWaste</p>
                         <p className="text-[10px] font-medium leading-tight text-neutral-400 dark:text-neutral-500">Route</p>
@@ -57,16 +67,23 @@ export function ResidentTopbar() {
                                 key={String(item.href)}
                                 href={item.href}
                                 prefetch
-                                className={`relative inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                                    active
-                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
-                                        : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-white/[0.06] dark:hover:text-neutral-200'
-                                }`}
+                                className="relative inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-200"
                             >
-                                {item.icon && (
-                                    <item.icon size={16} strokeWidth={active ? 2.3 : 1.8} />
+                                {active && (
+                                    <motion.div
+                                        layoutId="resident-nav-pill"
+                                        className="absolute inset-0 rounded-xl bg-emerald-50 dark:bg-emerald-950/50"
+                                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                    />
                                 )}
-                                {item.title}
+                                <span className={`relative z-10 flex items-center gap-2 ${
+                                    active
+                                        ? 'text-emerald-700 dark:text-emerald-400'
+                                        : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+                                }`}>
+                                    {item.icon && <item.icon size={16} strokeWidth={active ? 2.3 : 1.8} />}
+                                    {item.title}
+                                </span>
                             </Link>
                         );
                     })}
@@ -78,7 +95,11 @@ export function ResidentTopbar() {
                 {/* User Menu */}
                 <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
-                        <button className="group flex items-center gap-2 rounded-full border border-transparent p-1 pl-1 pr-2 transition-all duration-200 hover:border-neutral-200 hover:bg-neutral-50 focus:outline-none dark:hover:border-white/10 dark:hover:bg-white/[0.04]">
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.97 }}
+                            className="group flex items-center gap-2 rounded-full border border-transparent p-1 pl-1 pr-2 transition-all duration-200 hover:border-neutral-200 hover:bg-neutral-50 focus:outline-none dark:hover:border-white/10 dark:hover:bg-white/[0.04]"
+                        >
                             <Avatar className="h-8 w-8 ring-2 ring-emerald-200/60 transition-all group-hover:ring-emerald-300 dark:ring-emerald-800/50">
                                 <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
                                 <AvatarFallback className="bg-gradient-to-br from-emerald-100 to-teal-100 text-xs font-bold text-emerald-700 dark:from-emerald-900/60 dark:to-teal-900/60 dark:text-emerald-300">
@@ -90,7 +111,7 @@ export function ResidentTopbar() {
                                 <p className="text-[10px] leading-tight text-neutral-400 dark:text-neutral-500">Resident</p>
                             </div>
                             <ChevronDown size={14} className="hidden text-neutral-400 md:block" />
-                        </button>
+                        </motion.button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" sideOffset={8} className="w-60 rounded-2xl border-neutral-200/80 p-1 shadow-xl shadow-black/[0.08] dark:border-white/10 dark:shadow-black/40">
                         <DropdownMenuLabel className="rounded-xl bg-neutral-50 p-3 font-normal dark:bg-neutral-800/50">
@@ -115,12 +136,6 @@ export function ResidentTopbar() {
                                         <span>My Account</span>
                                     </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem asChild className="rounded-xl">
-                                    <Link href="/settings/appearance" className="cursor-pointer gap-3 px-3 py-2.5">
-                                        <Palette className="h-4 w-4 text-neutral-500" />
-                                        <span>Appearance</span>
-                                    </Link>
-                                </DropdownMenuItem>
                             </DropdownMenuGroup>
                             <DropdownMenuSeparator className="my-1" />
                             <DropdownMenuItem
@@ -134,6 +149,6 @@ export function ResidentTopbar() {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-        </header>
+        </motion.header>
     );
 }

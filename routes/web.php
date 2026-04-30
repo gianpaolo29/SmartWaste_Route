@@ -39,6 +39,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/routes/create', [\App\Http\Controllers\Admin\RoutePlanController::class, 'create'])->name('routes.create');
     Route::post('/routes', [\App\Http\Controllers\Admin\RoutePlanController::class, 'store'])->name('routes.store');
     Route::get('/routes/{route}', [\App\Http\Controllers\Admin\RoutePlanController::class, 'show'])->name('routes.show');
+    Route::put('/routes/{route}', [\App\Http\Controllers\Admin\RoutePlanController::class, 'update'])->name('routes.update');
+    Route::delete('/routes/{route}', [\App\Http\Controllers\Admin\RoutePlanController::class, 'destroy'])->name('routes.destroy');
     Route::get('/zones/{zone}/households', [\App\Http\Controllers\Admin\RoutePlanController::class, 'households'])->name('zones.households');
 
     Route::get('/barangays', [\App\Http\Controllers\Admin\AdminListController::class, 'barangays'])->name('barangays.index');
@@ -61,6 +63,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::get('/collection-reports', [\App\Http\Controllers\Admin\AdminListController::class, 'collectionReports'])->name('collection-reports.index');
     Route::get('/reports', [\App\Http\Controllers\Admin\AdminListController::class, 'reports'])->name('reports.index');
+    Route::put('/reports/{report}', [\App\Http\Controllers\Admin\AdminListController::class, 'updateReportStatus'])->name('reports.update');
 });
 
 Route::middleware(['auth', 'role:collector'])->prefix('collector')->name('collector.')->group(function () {

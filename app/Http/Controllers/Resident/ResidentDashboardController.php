@@ -90,6 +90,28 @@ class ResidentDashboardController extends Controller
             (float) $route->current_lng,
         );
 
+        // Check if this resident's household is the next uncollected stop
+        $route->load(['stops' => fn ($q) => $q->orderBy('stop_no'), 'stops.collection']);
+        $isNextStop = false;
+        $stopsAway = 0;
+
+        // Find uncollected stops sorted by distance from truck
+        $uncollected = $route->stops
+            ->filter(fn ($s) => !$s->collection || $s->collection->status !== 'collected')
+            ->sortBy(fn ($s) => $this->haversine(
+                (float) $route->current_lat, (float) $route->current_lng,
+                (float) $s->lat, (float) $s->lng,
+            ))
+            ->values();
+
+        foreach ($uncollected as $i => $stop) {
+            if ($stop->household_id === $household->id) {
+                $isNextStop = ($i === 0);
+                $stopsAway = $i;
+                break;
+            }
+        }
+
         return response()->json([
             'truck' => [
                 'route_id' => $route->id,
@@ -99,6 +121,8 @@ class ResidentDashboardController extends Controller
                 'distance_km' => round($distanceKm, 3),
                 'distance_m' => (int) round($distanceKm * 1000),
                 'updated_at' => $route->location_updated_at?->toIso8601String(),
+                'is_next_stop' => $isNextStop,
+                'stops_away' => $stopsAway,
             ],
         ]);
     }

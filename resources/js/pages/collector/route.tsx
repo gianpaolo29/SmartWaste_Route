@@ -588,7 +588,7 @@ export default function CollectorRoute({
         }
         setStatus('completed');
         toast('success', 'Route completed');
-        router.visit(`/collector/reports/create?route_id=${plan.id}`);
+        router.visit(`/collector/reports?route_id=${plan.id}`);
     };
 
     const markStop = async (stop: Stop, statusValue: 'collected' | 'skipped') => {

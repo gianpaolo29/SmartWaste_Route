@@ -1,8 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect } from 'react';
-import { Plus, Route, MapPin, User, ChevronRight, Clock } from 'lucide-react';
+import { Plus, Route, MapPin, User, ChevronRight, Clock, Trash2, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AdminLayout from '@/layouts/admin-layout';
+import { confirm } from '@/lib/notify';
 import type { BreadcrumbItem } from '@/types';
 
 type Plan = {
@@ -23,6 +24,7 @@ const statusConfig: Record<string, { label: string; bg: string; text: string; do
     planned: { label: 'Planned', bg: 'bg-gray-50 dark:bg-gray-800/30', text: 'text-gray-600 dark:text-gray-400', dot: 'bg-gray-400' },
     in_progress: { label: 'In Progress', bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-600 dark:text-blue-400', dot: 'bg-blue-500 animate-pulse' },
     completed: { label: 'Completed', bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
+    cancelled: { label: 'Cancelled', bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-500 dark:text-red-400', dot: 'bg-red-400' },
 };
 
 export default function RoutesIndex({ plans }: { plans: Plan[] }) {
@@ -135,13 +137,42 @@ export default function RoutesIndex({ plans }: { plans: Plan[] }) {
                                                 </span>
                                             </td>
                                             <td className="px-5 py-3.5 text-right">
-                                                <Link
-                                                    href={`/admin/routes/${p.id}`}
-                                                    className="group inline-flex items-center gap-1 text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400"
-                                                >
-                                                    View
-                                                    <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-                                                </Link>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {p.status === 'planned' && (
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.preventDefault();
+                                                                if (await confirm('Cancel route?', 'This will mark the route as cancelled.', 'Cancel it')) {
+                                                                    router.put(`/admin/routes/${p.id}`, { status: 'cancelled' }, { preserveScroll: true });
+                                                                }
+                                                            }}
+                                                            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                                                        >
+                                                            <XCircle size={13} />
+                                                            Cancel
+                                                        </button>
+                                                    )}
+                                                    {p.status !== 'in_progress' && (
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.preventDefault();
+                                                                if (await confirm('Delete route?', 'This will permanently remove the route and its stops.', 'Delete')) {
+                                                                    router.delete(`/admin/routes/${p.id}`, { preserveScroll: true });
+                                                                }
+                                                            }}
+                                                            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                                                        >
+                                                            <Trash2 size={13} />
+                                                        </button>
+                                                    )}
+                                                    <Link
+                                                        href={`/admin/routes/${p.id}`}
+                                                        className="group inline-flex items-center gap-1 text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400"
+                                                    >
+                                                        View
+                                                        <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                                                    </Link>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
