@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { CalendarClock, ChevronRight, ClipboardList, Download, Plus, Recycle, Scale, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CollectorLayout from '@/layouts/collector-layout';
+import { successAlert } from '@/lib/notify';
 import type { FormEventHandler } from 'react';
 
 type Report = {
@@ -95,6 +96,7 @@ export default function ReportsIndex({ reports, summary, period, pagination, ava
             onSuccess: () => {
                 setShowModal(false);
                 form.reset();
+                successAlert('Report Submitted', 'Your collection report has been saved.');
             },
         });
     };

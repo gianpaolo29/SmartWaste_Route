@@ -1,8 +1,15 @@
 import { Head, useForm } from '@inertiajs/react';
 import { AlertTriangle, FileText, Send } from 'lucide-react';
+import { motion } from 'framer-motion';
 import ResidentLayout from '@/layouts/resident-layout';
 import { errorAlert, successAlert } from '@/lib/notify';
 import type { BreadcrumbItem } from '@/types';
+
+const fadeUp = (delay = 0) => ({
+    initial: { opacity: 0, y: 16 } as const,
+    animate: { opacity: 1, y: 0 } as const,
+    transition: { duration: 0.4, delay, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+});
 
 type Report = {
     id: number;
@@ -55,13 +62,13 @@ export default function ResidentMissedPickup({ reports }: { reports: Report[] })
             <Head title="Missed Pickup" />
             <div className="space-y-4 px-4 py-5 pb-36">
                 {/* Header */}
-                <div>
+                <motion.div {...fadeUp(0)}>
                     <h1 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Report a Missed Pickup</h1>
                     <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">Let us know if your garbage was not collected</p>
-                </div>
+                </motion.div>
 
                 {/* Form */}
-                <form
+                <motion.form {...fadeUp(0.05)}
                     onSubmit={submit}
                     className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
                 >
@@ -93,10 +100,10 @@ export default function ResidentMissedPickup({ reports }: { reports: Report[] })
                             {processing ? 'Submitting…' : 'Submit Report'}
                         </button>
                     </div>
-                </form>
+                </motion.form>
 
                 {/* Reports list */}
-                <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+                <motion.section {...fadeUp(0.1)} className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
                     <div className="flex items-center gap-2 border-b border-neutral-100 px-4 py-3 dark:border-neutral-800">
                         <FileText size={15} className="text-emerald-600 dark:text-emerald-400" />
                         <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">My Reports</h2>
@@ -131,7 +138,7 @@ export default function ResidentMissedPickup({ reports }: { reports: Report[] })
                             </ul>
                         )}
                     </div>
-                </section>
+                </motion.section>
             </div>
         </ResidentLayout>
     );

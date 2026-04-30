@@ -1,59 +1,67 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Rounded square background -->
-  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
-
-  <!-- Trash bin -->
-  <rect x="120" y="175" width="120" height="150" rx="14" fill="white" opacity="0.95"/>
-  <!-- Bin lid -->
-  <rect x="110" y="158" width="140" height="28" rx="10" fill="white"/>
-  <!-- Bin handle -->
-  <rect x="165" y="142" width="30" height="22" rx="8" fill="white"/>
-  <!-- Bin lines -->
-  <line x1="155" y1="205" x2="155" y2="305" stroke="#2d6a4f" stroke-width="6" stroke-linecap="round" opacity="0.3"/>
-  <line x1="180" y1="205" x2="180" y2="305" stroke="#2d6a4f" stroke-width="6" stroke-linecap="round" opacity="0.3"/>
-  <line x1="205" y1="205" x2="205" y2="305" stroke="#2d6a4f" stroke-width="6" stroke-linecap="round" opacity="0.3"/>
-  <!-- Recycle symbol on bin -->
-  <path d="M168 250 L180 235 L192 250 M172 260 L180 275 L188 260" stroke="#2d6a4f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
-
-  <!-- Truck body -->
-  <rect x="255" y="215" width="145" height="95" rx="14" fill="white" opacity="0.95"/>
-  <!-- Truck cabin -->
-  <path d="M400 248 L435 248 C444 248 452 254 455 262 L468 295 C470 300 468 308 462 310 L400 310 L400 248Z" fill="white" opacity="0.95"/>
-  <!-- Truck bed (open top for waste) -->
-  <rect x="262" y="200" width="130" height="22" rx="6" fill="#74c69d" opacity="0.7"/>
-  <!-- Waste in truck -->
-  <circle cx="295" cy="208" r="8" fill="#52b788" opacity="0.6"/>
-  <circle cx="315" cy="205" r="10" fill="#40916c" opacity="0.5"/>
-  <circle cx="340" cy="207" r="7" fill="#52b788" opacity="0.6"/>
-  <circle cx="360" cy="209" r="9" fill="#40916c" opacity="0.5"/>
-  <!-- Truck window -->
-  <rect x="410" y="258" width="38" height="28" rx="6" fill="#40916c" opacity="0.5"/>
-  <!-- Truck wheels -->
-  <circle cx="300" cy="316" r="24" fill="#1b4332"/>
-  <circle cx="300" cy="316" r="12" fill="white"/>
-  <circle cx="300" cy="316" r="5" fill="#1b4332"/>
-  <circle cx="438" cy="316" r="24" fill="#1b4332"/>
-  <circle cx="438" cy="316" r="12" fill="white"/>
-  <circle cx="438" cy="316" r="5" fill="#1b4332"/>
-  <!-- Truck underline -->
-  <line x1="324" y1="310" x2="414" y2="310" stroke="white" stroke-width="4" opacity="0.3"/>
-
-  <!-- Motion lines behind truck -->
-  <line x1="100" y1="260" x2="70" y2="260" stroke="white" stroke-width="6" stroke-linecap="round" opacity="0.25"/>
-  <line x1="105" y1="280" x2="55" y2="280" stroke="white" stroke-width="6" stroke-linecap="round" opacity="0.2"/>
-  <line x1="100" y1="300" x2="65" y2="300" stroke="white" stroke-width="6" stroke-linecap="round" opacity="0.15"/>
-
-  <!-- Small leaf accent top-right -->
-  <path d="M420 120 C420 120 390 138 390 162 C390 178 405 185 420 177 C435 185 450 178 450 162 C450 138 420 120 420 120Z" fill="white" opacity="0.35"/>
-  <line x1="420" y1="132" x2="420" y2="177" stroke="#1b4332" stroke-width="3.5" stroke-linecap="round" opacity="0.3"/>
-
-  <!-- Ground line -->
-  <line x1="60" y1="345" x2="475" y2="345" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.15"/>
-
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512">
-      <stop offset="0%" stop-color="#1b4332"/>
-      <stop offset="100%" stop-color="#2d6a4f"/>
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0%" stop-color="white" stop-opacity="0.15"/>
+      <stop offset="50%" stop-color="white" stop-opacity="0"/>
     </linearGradient>
   </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="120" fill="url(#shine)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="420" cy="90" r="80" fill="white" opacity="0.06"/>
+  <circle cx="80" cy="430" r="60" fill="white" opacity="0.04"/>
+
+  <!-- Route path (curved road) -->
+  <path d="M120 380 Q180 300 256 280 Q340 258 400 180" stroke="white" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.15"/>
+  <path d="M120 380 Q180 300 256 280 Q340 258 400 180" stroke="white" stroke-width="3" stroke-linecap="round" stroke-dasharray="12 8" fill="none" opacity="0.3"/>
+
+  <!-- Location pins on route -->
+  <circle cx="160" cy="345" r="10" fill="white" opacity="0.5"/>
+  <circle cx="256" cy="278" r="10" fill="white" opacity="0.6"/>
+  <circle cx="365" cy="205" r="10" fill="white" opacity="0.5"/>
+
+  <!-- Truck body -->
+  <rect x="170" y="155" width="120" height="75" rx="12" fill="white" opacity="0.95"/>
+  <!-- Truck cargo top highlight -->
+  <rect x="175" y="160" width="110" height="8" rx="4" fill="#059669" opacity="0.15"/>
+  <!-- Recycle symbol -->
+  <g transform="translate(230, 188)" fill="none" stroke="#059669" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.5">
+    <path d="M0-14L6-4H-6Z"/>
+    <path d="M12 8L6-4" />
+    <path d="M-12 8L-6-4"/>
+    <path d="M12 8H-12"/>
+  </g>
+  <!-- Truck cabin -->
+  <path d="M290 175 L330 175 C340 175 348 182 352 190 L362 218 C364 224 360 230 354 230 L290 230 Z" fill="white" opacity="0.95"/>
+  <!-- Cabin window -->
+  <rect x="300" y="183" width="35" height="22" rx="5" fill="#059669" opacity="0.3"/>
+  <!-- Headlight -->
+  <rect x="354" y="210" width="8" height="12" rx="4" fill="#fbbf24" opacity="0.8"/>
+  <!-- Wheels -->
+  <circle cx="210" cy="236" r="20" fill="#064e3b"/>
+  <circle cx="210" cy="236" r="9" fill="white" opacity="0.9"/>
+  <circle cx="210" cy="236" r="4" fill="#064e3b"/>
+  <circle cx="340" cy="236" r="20" fill="#064e3b"/>
+  <circle cx="340" cy="236" r="9" fill="white" opacity="0.9"/>
+  <circle cx="340" cy="236" r="4" fill="#064e3b"/>
+
+  <!-- Ground -->
+  <line x1="80" y1="258" x2="440" y2="258" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.12"/>
+
+  <!-- Leaf accent -->
+  <g transform="translate(400, 100)" opacity="0.4">
+    <path d="M0-20 C12-12 16 0 10 14 C4 8-4 8-10 14 C-16 0-12-12 0-20Z" fill="white"/>
+    <line x1="0" y1="-14" x2="0" y2="14" stroke="#064e3b" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+  </g>
+
+  <!-- SW text -->
+  <text x="256" y="420" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="800" fill="white" opacity="0.9" letter-spacing="-2">SW</text>
+  <text x="256" y="455" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="600" fill="white" opacity="0.4" letter-spacing="6">ROUTE</text>
 </svg>

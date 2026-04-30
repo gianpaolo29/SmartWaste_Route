@@ -21,7 +21,8 @@
       "WebFetch(domain:i.pinimg.com)",
       "Bash(composer require:*)",
       "Bash(grep -E \"\\\\.\\(php|tsx|ts\\)$\")",
-      "Bash(ls .env*)"
+      "Bash(ls .env*)",
+      "Bash(grep:*)"
     ]
   }
 }
