@@ -251,7 +251,7 @@ export default function ResidentAccount({ stats }: Props) {
                 )}
 
                 {/* ===== Logout ===== */}
-                <div className="mt-3 px-4 pb-28">
+                <div className="mt-3 px-4 pb-36">
                     <button onClick={handleLogout} className="flex w-full items-center gap-4 rounded-2xl bg-white px-4 py-3.5 shadow-sm transition-colors hover:bg-red-50 active:bg-red-100 dark:bg-neutral-900 dark:hover:bg-red-950/30">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500 dark:bg-red-950/50 dark:text-red-400"><LogOut size={18} strokeWidth={1.8} /></div>
                         <span className="flex-1 text-left text-sm font-medium text-red-600 dark:text-red-400">Logout</span>

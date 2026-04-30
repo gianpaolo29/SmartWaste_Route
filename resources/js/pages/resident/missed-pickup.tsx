@@ -53,7 +53,7 @@ export default function ResidentMissedPickup({ reports }: { reports: Report[] })
     return (
         <ResidentLayout breadcrumbs={breadcrumbs}>
             <Head title="Missed Pickup" />
-            <div className="space-y-4 px-4 py-5">
+            <div className="space-y-4 px-4 py-5 pb-36">
                 {/* Header */}
                 <div>
                     <h1 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Report a Missed Pickup</h1>

@@ -50,7 +50,7 @@ export default function CollectorDashboard({ stats, recentReports, nextRoute }: 
     return (
         <CollectorLayout>
             <Head title="Home" />
-            <div className="space-y-4 px-4 py-5 pb-28">
+            <div className="space-y-4 px-4 py-5 pb-36">
 
                 {/* ===== Greeting ===== */}
                 <motion.div {...fadeUp()}>
@@ -59,7 +59,7 @@ export default function CollectorDashboard({ stats, recentReports, nextRoute }: 
                 </motion.div>
 
                 {/* ===== Hero card ===== */}
-                <motion.div {...fadeUp(0.05)} className="overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-700 p-5 shadow-lg shadow-emerald-600/15 dark:from-emerald-700 dark:via-emerald-800 dark:to-teal-800">
+                <motion.div {...fadeUp(0.05)} className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-700 p-5 shadow-lg shadow-emerald-600/15 dark:from-emerald-700 dark:via-emerald-800 dark:to-teal-800">
                     <div className="absolute right-[-30px] top-[-20px] h-40 w-40 rounded-full bg-white/10" />
                     <div className="flex items-center gap-4">
                         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">

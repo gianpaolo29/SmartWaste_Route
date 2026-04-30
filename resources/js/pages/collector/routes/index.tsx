@@ -42,7 +42,7 @@ export default function CollectorRoutesIndex({ today, upcoming, routes, filter }
     return (
         <CollectorLayout>
             <Head title="My Routes" />
-            <div className="space-y-4 px-4 py-5">
+            <div className="space-y-4 px-4 py-5 pb-36">
 
                 <motion.div {...fadeUp()}>
                     <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">My Routes</h1>

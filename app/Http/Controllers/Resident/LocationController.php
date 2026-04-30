@@ -46,5 +46,7 @@ class LocationController extends Controller
                 'lng' => $data['lng'] ?? null,
             ]
         );
+
+        return redirect()->route('resident.dashboard');
     }
 }

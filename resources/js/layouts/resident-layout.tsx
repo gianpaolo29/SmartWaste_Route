@@ -11,7 +11,7 @@ export default function ResidentLayout({ children }: AppLayoutProps) {
         <div className="flex min-h-screen w-full flex-col bg-neutral-50 dark:bg-neutral-950">
             {!isMobile && <ResidentTopbar />}
 
-            <main className={`mx-auto flex w-full max-w-7xl flex-1 flex-col ${isMobile ? 'pb-24' : ''}`}>
+            <main className={`flex w-full flex-1 flex-col ${isMobile ? '' : 'mx-auto max-w-7xl'}`}>
                 <NearbyTruckAlert />
                 {children}
             </main>

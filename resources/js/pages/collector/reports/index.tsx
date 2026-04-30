@@ -18,7 +18,7 @@ export default function ReportsIndex({ reports }: { reports: Report[] }) {
     return (
         <CollectorLayout>
             <Head title="Collection Reports" />
-            <div className="space-y-4 p-4">
+            <div className="space-y-4 p-4 pb-36">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-semibold">Collection Reports</h1>
                     <Link

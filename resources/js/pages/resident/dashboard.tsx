@@ -43,7 +43,7 @@ export default function ResidentDashboard({ mapsApiKey, household, upcoming, rep
     return (
         <ResidentLayout breadcrumbs={breadcrumbs}>
             <Head title="Home" />
-            <div className="space-y-4 px-4 py-5">
+            <div className="space-y-4 px-4 py-5 pb-36">
                 {/* ===== Greeting ===== */}
                 <motion.div {...fadeUp()}>
                     <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{greeting},</p>

@@ -34,7 +34,7 @@ export default function ReportsCreate({ routes, route_id }: { routes: RouteOptio
     return (
         <CollectorLayout>
             <Head title="New Collection Report" />
-            <div className="mx-auto max-w-2xl space-y-6 p-4">
+            <div className="mx-auto max-w-2xl space-y-6 p-4 pb-36">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-semibold">New Collection Report</h1>
                     <Link
