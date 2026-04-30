@@ -516,7 +516,7 @@ export default function CollectorRoute({
                     toast('error', 'GPS error: ' + (err.message ?? 'unknown'));
                 }
             },
-            { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 },
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 },
         );
     };
 
