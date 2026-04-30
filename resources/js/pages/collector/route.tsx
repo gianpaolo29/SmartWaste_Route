@@ -30,54 +30,30 @@ type Plan = {
     stops: Stop[];
 };
 
-function getCsrfToken() {
-    // Try meta tag first
-    const meta = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.content;
-    if (meta) return meta;
-    // Fallback: read from XSRF-TOKEN cookie (Laravel sets this automatically)
-    const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
-    return match ? decodeURIComponent(match[1]) : '';
+import axios from 'axios';
+
+// Configure axios to use CSRF token from meta tag
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+if (csrfMeta) {
+    axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfMeta.getAttribute('content') ?? '';
 }
 
-const post = async (path: string, body?: object) => {
-    const token = getCsrfToken();
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-    };
-    // Use X-XSRF-TOKEN for cookie-based token, X-CSRF-TOKEN for meta-based
-    if (token.length > 40) {
-        headers['X-XSRF-TOKEN'] = token;
-    } else {
-        headers['X-CSRF-TOKEN'] = token;
-    }
-
-    const res = await fetch(path, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: body ? JSON.stringify(body) : undefined,
-    });
-
-    // If CSRF mismatch, refresh token and retry once
-    if (res.status === 419) {
-        await fetch('/sanctum/csrf-cookie', { credentials: 'include' }).catch(() => {});
-        const newToken = getCsrfToken();
-        const retryHeaders: Record<string, string> = { ...headers };
-        if (newToken.length > 40) {
-            retryHeaders['X-XSRF-TOKEN'] = newToken;
-        } else {
-            retryHeaders['X-CSRF-TOKEN'] = newToken;
+const post = async (path: string, body?: object): Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }> => {
+    try {
+        const res = await axios.post(path, body ?? {});
+        return { ok: true, status: res.status, json: async () => res.data };
+    } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response) {
+            // On 419, refresh the page to get new CSRF token
+            if (err.response.status === 419) {
+                window.location.reload();
+                return { ok: false, status: 419, json: async () => ({}) };
+            }
+            return { ok: false, status: err.response.status, json: async () => err.response?.data ?? {} };
         }
-        return fetch(path, {
-            method: 'POST',
-            headers: retryHeaders,
-            credentials: 'include',
-            body: body ? JSON.stringify(body) : undefined,
-        });
+        throw err;
     }
-
-    return res;
 };
 
 /* ── RouteLine: draws the full collection route ── */
@@ -584,8 +560,8 @@ export default function CollectorRoute({
         try {
             const res = await post(`/collector/routes/${plan.id}/start`);
             if (!res.ok) {
-                const body = await res.json().catch(() => ({}));
-                return errorAlert('Failed to start', body?.message ?? `Server returned ${res.status}`);
+                const body = await res.json().catch(() => ({})) as Record<string, unknown>;
+                return errorAlert('Failed to start', (body?.message as string) ?? `Server returned ${res.status}`);
             }
         } catch {
             return errorAlert('Failed to start');
@@ -614,8 +590,8 @@ export default function CollectorRoute({
         try {
             const res = await post(`/collector/routes/${plan.id}/finish`);
             if (!res.ok) {
-                const body = await res.json().catch(() => ({}));
-                return errorAlert('Failed to finish', body?.message ?? `Server returned ${res.status}`);
+                const body = await res.json().catch(() => ({})) as Record<string, unknown>;
+                return errorAlert('Failed to finish', (body?.message as string) ?? `Server returned ${res.status}`);
             }
         } catch {
             return errorAlert('Failed to finish');
