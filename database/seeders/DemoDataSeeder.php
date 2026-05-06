@@ -22,6 +22,18 @@ use Illuminate\Support\Facades\Hash;
 
 class DemoDataSeeder extends Seeder
 {
+    private static function pick(array $items): mixed
+    {
+        return $items[array_rand($items)];
+    }
+
+    private static function pickMany(array $items, int $count): array
+    {
+        $count = min($count, count($items));
+        $keys = (array) array_rand($items, $count);
+        return array_map(fn ($k) => $items[$k], $keys);
+    }
+
     private array $firstNames = [
         'Juan', 'Maria', 'Jose', 'Ana', 'Pedro', 'Rosa', 'Carlos', 'Elena',
         'Miguel', 'Sofia', 'Antonio', 'Liza', 'Rafael', 'Grace', 'Ramon',
@@ -154,8 +166,8 @@ class DemoDataSeeder extends Seeder
             $trucks[] = Truck::updateOrCreate(
                 ['plate_no' => sprintf('SWR-%03d', $i)],
                 [
-                    'capacity_kg' => fake()->randomElement([1500, 2000, 2500, 3000]),
-                    'status' => $i <= 8 ? 'available' : fake()->randomElement(['maintenance', 'inactive']),
+                    'capacity_kg' => self::pick([1500, 2000, 2500, 3000]),
+                    'status' => $i <= 8 ? 'available' : self::pick(['maintenance', 'inactive']),
                     'collector_user_id' => $collectors[$i - 1]->id,
                 ],
             );
@@ -200,7 +212,7 @@ class DemoDataSeeder extends Seeder
 
         // ── Schedules (2-3 days per zone) ──
         foreach ($zoneList as $zone) {
-            $days = fake()->randomElements([0, 1, 2, 3, 4, 5, 6], mt_rand(2, 3));
+            $days = self::pickMany([0, 1, 2, 3, 4, 5, 6], mt_rand(2, 3));
             foreach ($days as $day) {
                 Schedule::updateOrCreate(
                     ['zone_id' => $zone->id, 'day_of_week' => $day, 'start_time' => '06:00:00', 'end_time' => '12:00:00'],
@@ -219,7 +231,7 @@ class DemoDataSeeder extends Seeder
 
             // 3-5 routes per day across different zones
             $routesPerDay = mt_rand(3, 5);
-            $dayZones = fake()->randomElements($zoneList, min($routesPerDay, count($zoneList)));
+            $dayZones = self::pickMany($zoneList, min($routesPerDay, count($zoneList)));
 
             foreach ($dayZones as $zone) {
                 $routeCount++;
@@ -264,7 +276,7 @@ class DemoDataSeeder extends Seeder
 
                     // Create collection record for completed routes
                     if ($isCompleted) {
-                        $collStatus = fake()->randomElement(['collected', 'collected', 'collected', 'collected', 'skipped', 'failed']);
+                        $collStatus = self::pick(['collected', 'collected', 'collected', 'collected', 'skipped', 'failed']);
                         Collection::create([
                             'route_stop_id' => $stop->id,
                             'collected_at' => $startedAt?->copy()->addMinutes(($stopNo + 1) * mt_rand(8, 20)),
@@ -304,7 +316,7 @@ class DemoDataSeeder extends Seeder
             if (!$hh) continue;
 
             $daysAgo = mt_rand(0, 60);
-            $status = fake()->randomElement(['pending', 'pending', 'verified', 'resolved', 'resolved', 'resolved', 'rejected']);
+            $status = self::pick(['pending', 'pending', 'verified', 'resolved', 'resolved', 'resolved', 'rejected']);
 
             MissedPickupReport::create([
                 'resident_user_id' => $resident->id,
