@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, ChevronDown, Home, LogOut, User } from 'lucide-react';
+import { AlertTriangle, BookOpen, CalendarDays, ChevronDown, ClipboardList, Home, LogOut, User } from 'lucide-react';
+import { ResidentNotificationBell } from '@/components/resident-notification-bell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     DropdownMenu,
@@ -19,6 +20,9 @@ import type { NavItem, User as UserType } from '@/types';
 
 const navItems: NavItem[] = [
     { title: 'Home', href: '/resident/dashboard', icon: Home },
+    { title: 'Schedule', href: '/resident/schedule', icon: CalendarDays },
+    { title: 'History', href: '/resident/pickup-history', icon: ClipboardList },
+    { title: 'Guide', href: '/resident/waste-guide', icon: BookOpen },
     { title: 'Report', href: '/resident/missed-pickup', icon: AlertTriangle },
 ];
 
@@ -90,6 +94,9 @@ export function ResidentTopbar() {
 
                 {/* Spacer */}
                 <div className="flex-1" />
+
+                {/* Notifications */}
+                <ResidentNotificationBell />
 
                 {/* User Menu */}
                 <DropdownMenu modal={false}>

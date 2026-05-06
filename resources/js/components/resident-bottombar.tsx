@@ -1,10 +1,12 @@
 import { Link } from '@inertiajs/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, Home, User } from 'lucide-react';
+import { AlertTriangle, CalendarDays, ClipboardList, Home, User } from 'lucide-react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 
 const tabs = [
     { title: 'Home', href: '/resident/dashboard', icon: Home },
+    { title: 'Schedule', href: '/resident/schedule', icon: CalendarDays },
+    { title: 'History', href: '/resident/pickup-history', icon: ClipboardList },
     { title: 'Report', href: '/resident/missed-pickup', icon: AlertTriangle },
     { title: 'Account', href: '/resident/account', icon: User },
 ];

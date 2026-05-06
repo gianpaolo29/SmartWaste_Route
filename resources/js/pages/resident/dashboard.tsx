@@ -3,6 +3,7 @@ import { AlertTriangle, CalendarClock, ChevronRight, Clock, FileText, Home, MapP
 import { motion } from 'framer-motion';
 import ResidentLayout from '@/layouts/resident-layout';
 import { ResidentMap } from '@/components/resident-map';
+import { ResidentNotificationBell } from '@/components/resident-notification-bell';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { BreadcrumbItem, User } from '@/types';
 
@@ -46,15 +47,18 @@ export default function ResidentDashboard({ mapsApiKey, household, upcoming, rep
     const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
     const isMobile = useIsMobile();
 
-    // ─── Mobile layout (untouched) ───
+    // ─── Mobile layout ───
     if (isMobile) {
         return (
             <ResidentLayout breadcrumbs={breadcrumbs}>
                 <Head title="Home" />
                 <div className="space-y-4 px-4 py-5 pb-36">
-                    <motion.div {...fadeUp()}>
-                        <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{greeting},</p>
-                        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">{firstName}</h1>
+                    <motion.div {...fadeUp()} className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{greeting},</p>
+                            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">{firstName}</h1>
+                        </div>
+                        <ResidentNotificationBell />
                     </motion.div>
 
                     <motion.div {...fadeUp(0.05)} className="overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 p-4 shadow-lg shadow-emerald-600/15 dark:from-emerald-700 dark:to-teal-700">

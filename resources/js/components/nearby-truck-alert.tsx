@@ -55,8 +55,8 @@ export function NearbyTruckAlert() {
                     vibrate([200, 100, 200, 100, 300]);
                     playAlertSound();
                     sendNotification(
-                        'Your house is next!',
-                        `${t.collector ?? 'Collector'} is ${t.distance_m}m away. Please bring out your trash now!`,
+                        'Collection truck arriving!',
+                        `${t.collector ?? 'Collector'} is heading to your house — only ${t.distance_m}m away. Please prepare your waste for pickup.`,
                     );
                 }
                 // Banner alert when nearby
@@ -69,8 +69,8 @@ export function NearbyTruckAlert() {
                     vibrate([200, 100, 200]);
                     playNotifySound();
                     sendNotification(
-                        'Garbage truck nearby!',
-                        `${t.collector ?? 'Collector'} is ~${t.distance_m}m away.`,
+                        'Waste collection in your area',
+                        `${t.collector ?? 'A collector'} is ~${t.distance_m}m away.${t.stops_away > 0 ? ` ${t.stops_away} stop${t.stops_away > 1 ? 's' : ''} before your house.` : ''} Get your waste ready!`,
                     );
                 }
 
@@ -134,8 +134,8 @@ export function NearbyTruckAlert() {
                                     </div>
                                 </div>
 
-                                <h2 className="text-xl font-bold">Your house is next!</h2>
-                                <p className="mt-1 text-sm text-white/80">Please bring out your trash now</p>
+                                <h2 className="text-xl font-bold">Pickup arriving!</h2>
+                                <p className="mt-1 text-sm text-white/80">Your house is next — prepare your waste now</p>
                             </div>
 
                             {/* Details */}
@@ -161,7 +161,7 @@ export function NearbyTruckAlert() {
                                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-all active:scale-[0.97]"
                                 >
                                     <Bell size={16} />
-                                    Got it, preparing trash!
+                                    Got it, preparing now!
                                 </button>
                             </div>
                         </motion.div>
@@ -189,7 +189,7 @@ export function NearbyTruckAlert() {
                             </div>
                             <div className="flex-1">
                                 <p className="text-sm font-semibold text-neutral-900 dark:text-white">
-                                    {truck?.is_next_stop ? 'You\'re next!' : 'Garbage truck nearby!'}
+                                    {truck?.is_next_stop ? 'Pickup arriving!' : 'Collection truck nearby'}
                                 </p>
                                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
                                     {truck?.collector ? `${truck.collector} is ` : 'A collector is '}

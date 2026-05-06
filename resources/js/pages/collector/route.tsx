@@ -11,6 +11,8 @@ import {
 import { Truck, Navigation, MapPin, CheckCircle2, SkipForward, AlertTriangle, Clock, ChevronRight, ChevronLeft, ClipboardList, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TuyBoundary } from '@/components/tuy-boundary';
+import { SkipReasonModal } from '@/components/skip-reason-modal';
+import { PhotoCaptureModal } from '@/components/photo-capture-modal';
 import { confirm, errorAlert, promptText, toast } from '@/lib/notify';
 
 type Stop = {
@@ -297,6 +299,8 @@ export default function CollectorRoute({
     const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [selectedVoiceIdx, setSelectedVoiceIdx] = useState<number>(-1); // -1 = auto
     const [showVoicePicker, setShowVoicePicker] = useState(false);
+    const [skipTarget, setSkipTarget] = useState<Stop | null>(null);
+    const [collectTarget, setCollectTarget] = useState<Stop | null>(null);
     const lastSpokenRef = useRef<string>('');
     const prevPos = useRef<{ lat: number; lng: number } | null>(null);
     const watchRef = useRef<number | null>(null);
@@ -606,12 +610,25 @@ export default function CollectorRoute({
         router.visit(`/collector/reports?route_id=${plan.id}`);
     };
 
-    const markStop = async (stop: Stop, statusValue: 'collected' | 'skipped') => {
-        await post(`/collector/routes/${plan.id}/stops/${stop.id}/collect`, {
-            status: statusValue,
-            gps_lat: me?.lat,
-            gps_lng: me?.lng,
-        });
+    const markStop = async (stop: Stop, statusValue: 'collected' | 'skipped', remarks?: string, photo?: File) => {
+        if (photo) {
+            const formData = new FormData();
+            formData.append('status', statusValue);
+            if (remarks) formData.append('remarks', remarks);
+            if (me?.lat) formData.append('gps_lat', String(me.lat));
+            if (me?.lng) formData.append('gps_lng', String(me.lng));
+            formData.append('proof_photo', photo);
+            await axios.post(`/collector/routes/${plan.id}/stops/${stop.id}/collect`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+        } else {
+            await post(`/collector/routes/${plan.id}/stops/${stop.id}/collect`, {
+                status: statusValue,
+                remarks,
+                gps_lat: me?.lat,
+                gps_lng: me?.lng,
+            });
+        }
         setStops((prev) =>
             prev.map((s) => (s.id === stop.id ? { ...s, collection_status: statusValue } : s)),
         );
@@ -1221,14 +1238,14 @@ export default function CollectorRoute({
                                             {status === 'in_progress' && !s.collection_status && (
                                                 <div className="mt-3 flex flex-wrap gap-2">
                                                     <button
-                                                        onClick={() => markStop(s, 'collected')}
+                                                        onClick={() => setCollectTarget(s)}
                                                         className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-[0.96] hover:bg-emerald-700"
                                                     >
                                                         <CheckCircle2 size={13} />
                                                         Collected
                                                     </button>
                                                     <button
-                                                        onClick={() => markStop(s, 'skipped')}
+                                                        onClick={() => setSkipTarget(s)}
                                                         className="inline-flex items-center gap-1.5 rounded-xl bg-neutral-100 px-3.5 py-2 text-xs font-semibold text-neutral-600 transition-all active:scale-[0.96] hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300"
                                                     >
                                                         <SkipForward size={13} />
@@ -1255,6 +1272,26 @@ export default function CollectorRoute({
 
                 {isMobile && <CollectorBottombar />}
             </div>
+
+            {/* Skip Reason Modal */}
+            <SkipReasonModal
+                open={!!skipTarget}
+                onClose={() => setSkipTarget(null)}
+                onSubmit={(reason) => {
+                    if (skipTarget) markStop(skipTarget, 'skipped', reason);
+                    setSkipTarget(null);
+                }}
+            />
+
+            {/* Photo Capture Modal */}
+            <PhotoCaptureModal
+                open={!!collectTarget}
+                onClose={() => setCollectTarget(null)}
+                onSubmit={(photo) => {
+                    if (collectTarget) markStop(collectTarget, 'collected', undefined, photo ?? undefined);
+                    setCollectTarget(null);
+                }}
+            />
         </>
     );
 }

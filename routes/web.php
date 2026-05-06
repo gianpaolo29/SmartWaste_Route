@@ -70,6 +70,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::get('/schedules', [\App\Http\Controllers\Admin\ScheduleController::class, 'index'])->name('schedules.index');
 
+    Route::get('/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::post('/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'store'])->name('announcements.store');
+
     Route::get('/collection-reports', [\App\Http\Controllers\Admin\AdminListController::class, 'collectionReports'])->name('collection-reports.index');
     Route::get('/reports', [\App\Http\Controllers\Admin\AdminListController::class, 'reports'])->name('reports.index');
     Route::put('/reports/{report}', [\App\Http\Controllers\Admin\AdminListController::class, 'updateReportStatus'])->name('reports.update');
@@ -110,9 +113,16 @@ Route::middleware(['auth', 'role:resident'])->prefix('resident')->name('resident
     Route::post('/location/setup', [\App\Http\Controllers\Resident\LocationController::class, 'store'])->name('location.store');
     Route::get('/location/detect-zone', [\App\Http\Controllers\Resident\LocationController::class, 'detectZone'])->name('location.detect-zone');
 
+    Route::get('/schedule', \App\Http\Controllers\Resident\ScheduleCalendarController::class)->name('schedule');
+    Route::get('/waste-guide', fn () => \Inertia\Inertia::render('resident/waste-guide'))->name('waste-guide');
+    Route::get('/pickup-history', [\App\Http\Controllers\Resident\PickupHistoryController::class, 'index'])->name('pickup-history.index');
     Route::get('/missed-pickup', [\App\Http\Controllers\Resident\MissedPickupController::class, 'index'])->name('missed-pickup.index');
     Route::post('/missed-pickup', [\App\Http\Controllers\Resident\MissedPickupController::class, 'store'])->name('missed-pickup.store');
 
     Route::get('/nearby-truck', [\App\Http\Controllers\Resident\ResidentDashboardController::class, 'nearbyTruck'])->name('nearby-truck');
+
+    Route::get('/notifications', [\App\Http\Controllers\Resident\ResidentNotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\Resident\ResidentNotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::get('/notifications/unread-count', [\App\Http\Controllers\Resident\ResidentNotificationController::class, 'unreadCount'])->name('notifications.unread-count');
 });
 require __DIR__.'/settings.php';

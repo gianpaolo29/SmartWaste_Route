@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Collector;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppNotification;
 use App\Models\Collection;
 use App\Models\MissedPickupReport;
 use App\Models\RoutePlan;
 use App\Models\RouteStop;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class CollectorRouteController extends Controller
@@ -75,7 +77,13 @@ class CollectorRouteController extends Controller
             'remarks' => ['nullable', 'string', 'max:500'],
             'gps_lat' => ['nullable', 'numeric'],
             'gps_lng' => ['nullable', 'numeric'],
+            'proof_photo' => ['nullable', 'image', 'max:5120'],
         ]);
+
+        $photoPath = null;
+        if ($request->hasFile('proof_photo')) {
+            $photoPath = $request->file('proof_photo')->store('collection-proofs', 'public');
+        }
 
         Collection::updateOrCreate(
             ['route_stop_id' => $stop->id],
@@ -85,8 +93,23 @@ class CollectorRouteController extends Controller
                 'remarks' => $data['remarks'] ?? null,
                 'gps_lat' => $data['gps_lat'] ?? null,
                 'gps_lng' => $data['gps_lng'] ?? null,
+                'proof_photo_url' => $photoPath,
             ],
         );
+
+        // Send collection confirmation notification to resident
+        if ($data['status'] === 'collected') {
+            $resident = $stop->household?->resident;
+            if ($resident) {
+                AppNotification::create([
+                    'user_id' => $resident->id,
+                    'title' => 'Waste Collected',
+                    'message' => 'Your waste was collected at ' . now()->format('g:i A') . '. Thank you for keeping your community clean!',
+                    'type' => 'collection_confirmation',
+                    'is_read' => false,
+                ]);
+            }
+        }
 
         return response()->json(['ok' => true]);
     }
