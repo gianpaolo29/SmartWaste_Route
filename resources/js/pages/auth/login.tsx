@@ -1,6 +1,7 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Eye, EyeOff, Lock, Mail, Truck, User, ArrowRight, Sparkles, Leaf, Recycle, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User, ArrowRight, Sparkles, Leaf, Recycle, CheckCircle2 } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
 import InputError from '@/components/input-error';
 // Google OAuth + Fortify routes
@@ -82,6 +83,77 @@ export default function Login({ status, canResetPassword, canRegister }: Props) 
     const strength = pwStrength(regPassword);
     const strengthLabel = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'][strength];
     const strengthColor = ['bg-gray-200', 'bg-red-400', 'bg-orange-400', 'bg-amber-400', 'bg-emerald-500'][strength];
+
+    // Tuy bounds check
+    const TUY_BOUNDS = { minLat: 13.80, maxLat: 14.05, minLng: 120.55, maxLng: 120.85 };
+    const isInsideTuy = (lat: number, lng: number) =>
+        lat >= TUY_BOUNDS.minLat && lat <= TUY_BOUNDS.maxLat && lng >= TUY_BOUNDS.minLng && lng <= TUY_BOUNDS.maxLng;
+
+    const [locationVerified, setLocationVerified] = useState(false);
+
+    const checkLocationBeforeRegister = (e: React.FormEvent) => {
+        if (locationVerified) {
+            // Already verified, let form submit normally
+            setRegSubmitting(true);
+            return;
+        }
+
+        e.preventDefault();
+        if (!validateRegister()) return;
+
+        setRegSubmitting(true);
+
+        if (!navigator.geolocation) {
+            setRegSubmitting(false);
+            Swal.fire({
+                icon: 'error',
+                title: 'Location Not Supported',
+                text: 'Your browser does not support geolocation. This service is only available for residents of Tuy, Batangas.',
+                confirmButtonColor: '#059669',
+            }).then(() => { window.location.href = '/'; });
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                if (isInsideTuy(latitude, longitude)) {
+                    // Inside Tuy — mark verified, then submit via Inertia router
+                    setLocationVerified(true);
+                    router.post('/register', {
+                        name: regName,
+                        email: regEmail,
+                        password: regPassword,
+                        password_confirmation: regConfirm,
+                    }, {
+                        onError: (errs) => { setRegSubmitting(false); setLocationVerified(false); setRegErrors(errs as RegisterErrors); },
+                    });
+                } else {
+                    setRegSubmitting(false);
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Outside Service Area',
+                        html: '<p>You appear to be <strong>outside Tuy, Batangas</strong>.</p><p class="mt-2 text-sm text-gray-500">This service is exclusively available for residents within the municipality of Tuy. You will be redirected to the homepage.</p>',
+                        confirmButtonColor: '#059669',
+                        confirmButtonText: 'OK',
+                        allowOutsideClick: false,
+                    }).then(() => { window.location.href = '/'; });
+                }
+            },
+            () => {
+                setRegSubmitting(false);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Location Required',
+                    html: '<p>We need your location to verify you are within <strong>Tuy, Batangas</strong>.</p><p class="mt-2 text-sm text-gray-500">Please allow location access and try again. This service is only available for Tuy residents.</p>',
+                    confirmButtonColor: '#059669',
+                    confirmButtonText: 'OK',
+                    allowOutsideClick: false,
+                }).then(() => { window.location.href = '/'; });
+            },
+            { enableHighAccuracy: true, timeout: 10000 },
+        );
+    };
 
     const inputCls =
         'w-full rounded-xl border border-gray-200 bg-gray-50/50 py-3 pl-11 pr-4 text-sm outline-none transition-all focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-emerald-600';
@@ -200,7 +272,7 @@ export default function Login({ status, canResetPassword, canRegister }: Props) 
                                     <h1 className="text-3xl font-bold tracking-tight text-[#1b1b18] dark:text-white">Create your account</h1>
                                     <p className="mt-2 text-sm text-gray-400">Sign up to get started in seconds</p>
                                 </div>
-                                <Form {...registerStore.form()} resetOnSuccess={['password', 'password_confirmation']} onSubmit={(e) => { if (!validateRegister()) { e.preventDefault(); return; } setRegSubmitting(true); }} onError={() => setRegSubmitting(false)} className="space-y-4">
+                                <Form {...registerStore.form()} resetOnSuccess={['password', 'password_confirmation']} onSubmit={checkLocationBeforeRegister} onError={() => { setRegSubmitting(false); setLocationVerified(false); }} className="space-y-4">
                                     {({ processing, errors }) => (
                                         <>
                                             <div>
@@ -295,7 +367,7 @@ export default function Login({ status, canResetPassword, canRegister }: Props) 
                         <motion.div className="absolute bottom-10 right-10 h-60 w-60 rounded-full bg-teal-300/10 blur-3xl" animate={{ y: [0, 20, 0], x: [0, -10, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }} />
                         <div className="relative z-10 flex flex-1 flex-col justify-between p-12 text-white">
                             <Link href="/" className="flex items-center gap-2.5 text-xl font-bold">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm"><Truck size={20} /></div>
+                                <img src="/logo.png" alt="SmartWaste" className="h-10 w-10 object-contain" />
                                 SmartWaste Route
                             </Link>
                             <AnimatePresence mode="wait">
@@ -344,7 +416,7 @@ export default function Login({ status, canResetPassword, canRegister }: Props) 
                                 animate={{ y: [0, -5, 0] }}
                                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                             >
-                                <Truck size={30} strokeWidth={1.8} />
+                                <img src="/logo.png" alt="SmartWaste" className="h-10 w-10 object-contain" />
                             </motion.div>
                             <p className="mt-3 text-lg font-bold tracking-wider">SmartWaste Route</p>
                             <p className="mt-0.5 text-[11px] font-medium tracking-widest uppercase text-white/50">Cleaner Communities</p>
@@ -412,7 +484,7 @@ export default function Login({ status, canResetPassword, canRegister }: Props) 
                                     <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="text-center text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Create account</motion.h1>
                                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="mt-1 text-center text-sm text-neutral-400">Join SmartWaste Route today</motion.p>
 
-                                    <Form {...registerStore.form()} resetOnSuccess={['password', 'password_confirmation']} onSubmit={(e) => { if (!validateRegister()) { e.preventDefault(); return; } setRegSubmitting(true); }} onError={() => setRegSubmitting(false)} className="mt-6 space-y-3.5">
+                                    <Form {...registerStore.form()} resetOnSuccess={['password', 'password_confirmation']} onSubmit={checkLocationBeforeRegister} onError={() => { setRegSubmitting(false); setLocationVerified(false); }} className="mt-6 space-y-3.5">
                                         {({ processing, errors }) => (
                                             <>
                                                 <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>

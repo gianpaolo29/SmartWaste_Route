@@ -59,6 +59,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/collectors/{user}', [\App\Http\Controllers\Admin\AdminListController::class, 'updateCollector'])->name('collectors.update');
     Route::delete('/collectors/{user}', [\App\Http\Controllers\Admin\AdminListController::class, 'destroyCollector'])->name('collectors.destroy');
 
+    Route::get('/trucks', [\App\Http\Controllers\Admin\AdminListController::class, 'trucks'])->name('trucks.index');
+    Route::post('/trucks', [\App\Http\Controllers\Admin\AdminListController::class, 'storeTruck'])->name('trucks.store');
+    Route::put('/trucks/{truck}', [\App\Http\Controllers\Admin\AdminListController::class, 'updateTruck'])->name('trucks.update');
+    Route::delete('/trucks/{truck}', [\App\Http\Controllers\Admin\AdminListController::class, 'destroyTruck'])->name('trucks.destroy');
+
     Route::get('/schedules', [\App\Http\Controllers\Admin\ScheduleController::class, 'index'])->name('schedules.index');
 
     Route::get('/collection-reports', [\App\Http\Controllers\Admin\AdminListController::class, 'collectionReports'])->name('collection-reports.index');
@@ -93,6 +98,7 @@ Route::middleware(['auth', 'role:resident'])->prefix('resident')->name('resident
     Route::get('/account', [\App\Http\Controllers\Resident\ResidentAccountController::class, 'index'])->name('account');
     Route::get('/location/setup', [\App\Http\Controllers\Resident\LocationController::class, 'create'])->name('location.create');
     Route::post('/location/setup', [\App\Http\Controllers\Resident\LocationController::class, 'store'])->name('location.store');
+    Route::get('/location/detect-zone', [\App\Http\Controllers\Resident\LocationController::class, 'detectZone'])->name('location.detect-zone');
 
     Route::get('/missed-pickup', [\App\Http\Controllers\Resident\MissedPickupController::class, 'index'])->name('missed-pickup.index');
     Route::post('/missed-pickup', [\App\Http\Controllers\Resident\MissedPickupController::class, 'store'])->name('missed-pickup.store');

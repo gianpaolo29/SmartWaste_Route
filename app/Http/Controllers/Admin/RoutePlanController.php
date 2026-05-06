@@ -16,7 +16,7 @@ class RoutePlanController extends Controller
 {
     public function index()
     {
-        $plans = RoutePlan::with(['zone.barangays', 'collector', 'stops'])
+        $plans = RoutePlan::with(['zone.barangays', 'collector', 'truck', 'stops'])
             ->orderByDesc('route_date')
             ->orderByDesc('id')
             ->get()
@@ -32,6 +32,9 @@ class RoutePlanController extends Controller
                 'collector' => $p->collector ? [
                     'id' => $p->collector->id,
                     'name' => $p->collector->name,
+                ] : null,
+                'truck' => $p->truck ? [
+                    'plate_no' => $p->truck->plate_no,
                 ] : null,
                 'stops_count' => $p->stops->count(),
             ]);
@@ -50,9 +53,21 @@ class RoutePlanController extends Controller
                 'barangay' => $z->barangayNames(),
             ]);
 
-        $collectors = User::where('role', 'collector')
-            ->where('status', 'active')
-            ->get(['id', 'name']);
+        // Only show collectors that have an available truck assigned
+        $collectors = \App\Models\Truck::where('status', 'available')
+            ->whereNotNull('collector_user_id')
+            ->with('collector')
+            ->orderBy('plate_no')
+            ->get()
+            ->filter(fn ($t) => $t->collector && $t->collector->status === 'active')
+            ->map(fn ($t) => [
+                'id' => $t->collector->id,
+                'name' => $t->collector->name,
+                'truck_id' => $t->id,
+                'truck_plate' => $t->plate_no,
+                'truck_capacity' => $t->capacity_kg,
+            ])
+            ->values();
 
         return Inertia::render('admin/routes/create', [
             'zones' => $zones,
@@ -63,7 +78,12 @@ class RoutePlanController extends Controller
 
     public function households(Zone $zone)
     {
-        $households = Household::where('zone_id', $zone->id)
+        $barangayIds = $zone->barangays()->pluck('barangays.id');
+
+        $households = Household::where(function ($q) use ($zone, $barangayIds) {
+                $q->where('zone_id', $zone->id)
+                  ->orWhereIn('barangay_id', $barangayIds);
+            })
             ->whereNotNull('lat')
             ->whereNotNull('lng')
             ->get(['id', 'address_line', 'lat', 'lng']);
@@ -74,9 +94,10 @@ class RoutePlanController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'route_date' => ['required', 'date'],
+            'route_date' => ['required', 'date', 'after_or_equal:today'],
             'zone_id' => ['required', 'exists:zones,id'],
-            'collector_user_id' => ['nullable', 'exists:users,id'],
+            'collector_user_id' => ['required', 'exists:users,id'],
+            'truck_id' => ['required', 'exists:trucks,id'],
             'stops' => ['required', 'array', 'min:1'],
             'stops.*.household_id' => ['nullable', 'exists:households,id'],
             'stops.*.stop_address' => ['nullable', 'string', 'max:255'],
@@ -84,11 +105,10 @@ class RoutePlanController extends Controller
             'stops.*.lng' => ['required', 'numeric'],
         ]);
 
-        $truck = \App\Models\Truck::where('status', 'available')->first()
-            ?? \App\Models\Truck::first();
+        $truck = \App\Models\Truck::find($data['truck_id']);
 
-        if (! $truck) {
-            return back()->withErrors(['truck' => 'No trucks available. Run the TruckSeeder first.']);
+        if (! $truck || $truck->status !== 'available') {
+            return back()->withErrors(['truck_id' => 'Selected truck is not available.']);
         }
 
         $plan = DB::transaction(function () use ($data, $request, $truck) {

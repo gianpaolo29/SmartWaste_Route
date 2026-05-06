@@ -36,7 +36,7 @@ export default function ReportsShow({ report }: { report: Report }) {
     return (
         <CollectorLayout>
             <Head title="Report Details" />
-            <div className="mx-auto max-w-2xl space-y-4 px-4 py-5 pb-36">
+            <div className="mx-auto space-y-4 px-4 py-5 pb-36 max-w-2xl lg:max-w-none">
 
                 {/* Header */}
                 <motion.div {...fadeUp(0)} className="flex items-center gap-3">

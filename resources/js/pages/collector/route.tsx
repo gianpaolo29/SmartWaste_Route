@@ -366,7 +366,14 @@ export default function CollectorRoute({
             const all = window.speechSynthesis.getVoices();
             voicesRef.current = all;
             const english = all.filter((v) => v.lang.startsWith('en'));
-            setAvailableVoices(english.length > 0 ? english : all);
+            const filtered = english.length > 0 ? english : all;
+            setAvailableVoices(filtered);
+
+            // Auto-select Google UK English Male as default
+            if (selectedVoiceIdx === -1) {
+                const defaultIdx = filtered.findIndex((v) => v.name.toLowerCase().includes('google uk english male'));
+                if (defaultIdx >= 0) setSelectedVoiceIdx(defaultIdx);
+            }
         };
         loadVoices();
         window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
@@ -384,14 +391,14 @@ export default function CollectorRoute({
         utterance.pitch = 1;
         utterance.volume = 1;
 
-        // Use selected voice or default to Google UK English Female
+        // Use selected voice or default to Google UK English Male
         if (selectedVoiceIdx >= 0 && availableVoices[selectedVoiceIdx]) {
             utterance.voice = availableVoices[selectedVoiceIdx];
             utterance.lang = availableVoices[selectedVoiceIdx].lang;
         } else {
             const voices = voicesRef.current;
             const preferred =
-                voices.find((v) => v.name.toLowerCase().includes('google uk english female')) ??
+                voices.find((v) => v.name.toLowerCase().includes('google uk english male')) ??
                 voices.find((v) => v.name.toLowerCase().includes('google uk english')) ??
                 voices.find((v) => v.lang === 'en-GB' && v.localService) ??
                 voices.find((v) => v.lang.startsWith('en') && v.localService) ??

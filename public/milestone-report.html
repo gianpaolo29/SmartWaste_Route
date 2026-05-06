@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SmartWaste Route - Completed Milestone Report</title>
+<style>
+@page { margin: 2.5cm; size: A4; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', 'Calibri', Arial, sans-serif; color: #1a1a2e; font-size: 11pt; line-height: 1.65; padding: 40px 60px; background: #fff; }
+h1 { font-size: 22pt; color: #059669; margin-bottom: 4px; }
+h2 { font-size: 13pt; color: #1b4332; margin: 24px 0 8px; font-weight: 700; }
+h3 { font-size: 11pt; color: #059669; margin: 16px 0 6px; }
+p { margin-bottom: 10px; }
+table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; font-size: 10pt; }
+th, td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: #059669; color: #fff; font-weight: 600; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.3px; }
+tr:nth-child(even) td { background: #f0fdf4; }
+
+/* Cover */
+.cover { text-align: center; padding: 80px 0 60px; page-break-after: always; }
+.cover .logo { display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 72px; background: linear-gradient(135deg, #059669, #0d9488); border-radius: 18px; color: #fff; font-size: 28pt; font-weight: 800; margin-bottom: 20px; }
+.cover h1 { font-size: 26pt; color: #1b4332; border: none; margin-bottom: 6px; }
+.cover .subtitle { font-size: 13pt; color: #059669; margin-bottom: 6px; }
+.cover .doc-type { font-size: 18pt; color: #374151; font-weight: 700; margin: 30px 0; padding: 12px 0; border-top: 2px solid #059669; border-bottom: 2px solid #059669; }
+.cover .meta { font-size: 11pt; color: #6b7280; line-height: 2.2; text-align: left; max-width: 420px; margin: 30px auto 0; }
+.cover .meta strong { color: #1b4332; display: inline-block; width: 180px; }
+
+/* Section box */
+.section-box { background: #f0fdf4; border-left: 4px solid #059669; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0 16px; }
+.question-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 10px 0 16px; }
+.question-box .q { font-weight: 700; color: #1b4332; margin-bottom: 6px; font-size: 10pt; }
+.question-box .a { color: #374151; }
+
+/* Review table */
+.review-table td:first-child { width: 45%; font-weight: 600; color: #1b4332; }
+.review-table td:nth-child(2), .review-table td:nth-child(3) { width: 5%; text-align: center; }
+.review-table td:last-child { width: 45%; }
+.check { color: #059669; font-size: 14pt; font-weight: 800; }
+
+/* Signatures */
+.sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 30px 0; }
+.sig-block { text-align: center; }
+.sig-line { border-bottom: 1px solid #1b4332; width: 100%; height: 40px; margin-bottom: 4px; }
+.sig-label { font-size: 9pt; color: #6b7280; }
+.sig-name { font-size: 10pt; font-weight: 600; color: #1b4332; margin-top: 2px; }
+
+.page-break { page-break-before: always; }
+footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 9pt; color: #9ca3af; display: flex; justify-content: space-between; }
+@media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+    <div class="logo">SW</div>
+    <h1>SmartWaste Route</h1>
+    <div class="subtitle">Waste Collection Scheduling & Route Optimization System<br>in Tuy, Batangas</div>
+    <div class="doc-type">COMPLETED MILESTONE REPORT</div>
+    <div class="meta">
+        <strong>Project Title:</strong> SmartWaste Route<br>
+        <strong>Team Name:</strong> Echo Haulers<br>
+        <strong>Date:</strong> May 6, 2026<br>
+        <strong>Project Manager:</strong> Gian Paolo Mulingbayan<br>
+        <strong>Project Leader:</strong> Gian Paolo Mulingbayan<br>
+        <strong>Independent Reviewer:</strong> <br>
+        <strong>Author:</strong> Gian Paolo Mulingbayan
+    </div>
+</div>
+
+<!-- INSTRUCTIONS NOTE -->
+<div class="section-box" style="background:#fffbeb;border-color:#f59e0b;margin-bottom:20px">
+    <p style="margin:0;font-size:10pt;color:#92400e">This document is used during the development stage when each milestone has been achieved. The Project Leader completes a summary report of progress to date, including project tolerances and risks. The Independent Reviewer then completes the second section to recommend whether the project moves on to the next milestone.</p>
+</div>
+
+<!-- VERSION HISTORY -->
+<h2>Version History</h2>
+<table>
+    <thead><tr><th>Version</th><th>Date</th><th>Previous Version Date</th><th>Number of Changes</th></tr></thead>
+    <tbody>
+        <tr><td>1.0</td><td>05/06/2026</td><td>N/A</td><td>Initial milestone report</td></tr>
+    </tbody>
+</table>
+
+<!-- STAGE SUMMARY -->
+<h2 class="page-break">Stage Summary (Review of Previous Stage)</h2>
+<p>The Project Manager should report the progress achieved during this stage, including any problems or unexpected issues and their impact on the project, any costs incurred or lessons learned, and whether the project has remained on schedule.</p>
+
+<div class="section-box">
+<p>During the current development and testing stage, the SmartWaste Route system has achieved significant progress across all planned deliverables. The following key milestones were completed:</p>
+<ul style="padding-left:20px;margin:10px 0">
+    <li><strong>Admin Management System:</strong> Complete CRUD operations for barangays, zones, residents, collectors, and trucks with premium UI design, pagination, search, and filters.</li>
+    <li><strong>Route Optimization:</strong> Google Directions API integration with batch processing for 25+ waypoints, automatic collector-truck assignment, and date validation.</li>
+    <li><strong>Map Integration:</strong> Interactive polyline-based barangay boundary visualization with click-to-zoom, glow effects, and real-time truck tracking for residents.</li>
+    <li><strong>Collection Reports:</strong> Full analytics dashboard with area charts, donut charts, bar charts, period filtering, and export-to-print functionality.</li>
+    <li><strong>Resident Features:</strong> GPS-based auto-registration with geofencing (Tuy bounds check), automatic zone assignment via nearest-centroid algorithm, missed pickup reporting, and responsive mobile/desktop layouts.</li>
+    <li><strong>Dark Mode:</strong> Complete dark mode support across all admin and resident interfaces with emerald-tinted color scheme.</li>
+    <li><strong>Schedule Management:</strong> Monthly calendar view with route visualization, sidebar details, and status tracking.</li>
+</ul>
+<p>Problems encountered during this stage included OpenStreetMap Nominatim API rate limiting (resolved with retry mechanism and centroid-based detection), Google Directions API waypoint limits (resolved with batch splitting), and household count discrepancies for multi-barangay zones (resolved by querying through pivot tables). All issues were identified during testing and resolved before milestone completion.</p>
+</div>
+
+<!-- ON SCHEDULE -->
+<h2>Has the project remained on schedule/on budget/within scope?</h2>
+<div class="section-box">
+<p>The Echo Haulers project remained on schedule, within budget, and within scope during the development and testing stage. Planned tasks were completed on time, project costs stayed within the allocated budget, and all core system features were delivered as outlined in the project plan. Minor refinements were made based on testing feedback, including:</p>
+<ul style="padding-left:20px;margin:10px 0">
+    <li>UI redesign across all admin pages for premium look and consistency</li>
+    <li>Addition of truck management module (not in original scope but required for route assignment)</li>
+    <li>Geolocation-based registration restriction to Tuy, Batangas municipality</li>
+</ul>
+<p>These additions were accommodated within the existing timeline through efficient development practices and did not significantly affect the project schedule or budget.</p>
+</div>
+
+<!-- PROJECT PLAN EXPECTATIONS -->
+<h2>Project Plan Expectations (Looking Forward)</h2>
+<div class="section-box">
+<p>The outlook for the SmartWaste project remains positive and has not been significantly affected by any major issues. The project is still generally on schedule, with only minor delays that have already been addressed through adjustments in development and testing activities.</p>
+<p>The next stage focuses on:</p>
+<ul style="padding-left:20px;margin:10px 0">
+    <li>Final system polishing and bug fixes based on presentation feedback</li>
+    <li>Production deployment preparation</li>
+    <li>User training documentation for administrators and collectors</li>
+    <li>Field testing in a controlled pilot area within Tuy</li>
+    <li>Performance optimization for concurrent users</li>
+</ul>
+<p>The schedule for the next stage remains aligned with the original project plan, ensuring that all remaining deliverables will be completed within the agreed timeframe. Resources and responsibilities have been clearly assigned to support smooth progression into the next phase.</p>
+</div>
+
+<!-- BUSINESS CASE REVIEW -->
+<h2 class="page-break">Business Case Review</h2>
+<div class="section-box">
+<p>The SmartWaste project was developed to improve waste management in Tuy, Batangas by addressing issues in manual reporting, delayed response, and lack of real-time monitoring. It aims to replace inefficient processes with a centralized system that improves accuracy, speed, and coordination.</p>
+
+<p><strong>Options Considered:</strong></p>
+<ol style="padding-left:20px;margin:10px 0">
+    <li>Maintaining the current manual system</li>
+    <li>Making partial improvements to existing processes</li>
+    <li>Fully developing the SmartWaste Route system</li>
+</ol>
+<p>Option 3 was chosen because it offers the most effective long-term solution with automated scheduling, GPS-based route optimization, real-time tracking, and data-driven reporting.</p>
+
+<p><strong>Expected Benefits:</strong> Faster waste reporting, better monitoring, reduced manual work, fewer errors, improved decision-making through real-time data, optimized collection routes reducing fuel costs and time.</p>
+
+<p><strong>Risks Identified:</strong> Technical challenges (API rate limits, waypoint limits), user resistance, data errors, budget limits, system downtime, and security concerns. All identified risks have been managed through mitigation strategies.</p>
+
+<p><strong>Status:</strong> The project is proceeding according to plan. All core features have been implemented and tested successfully.</p>
+</div>
+
+<!-- RISK REVIEW -->
+<h2>Risk Review</h2>
+<div class="section-box">
+<p>During the SmartWaste project, the following additional risks were identified and addressed:</p>
+<table style="margin:10px 0">
+    <thead><tr><th>Risk</th><th>Impact</th><th>Resolution</th></tr></thead>
+    <tbody>
+        <tr><td>Nominatim API rate limiting (429 errors)</td><td>High - blocked user registration</td><td>Implemented retry with exponential backoff + centroid-based zone detection as primary method</td></tr>
+        <tr><td>Google Directions API 25-waypoint limit</td><td>High - prevented route optimization for large zones</td><td>Batch processing with overlap stitching</td></tr>
+        <tr><td>Multi-barangay zone household count showing 0</td><td>Medium - incorrect data display</td><td>Query through barangay pivot table as fallback</td></tr>
+        <tr><td>Users outside Tuy attempting registration</td><td>Low - irrelevant user accounts</td><td>GPS geofencing check before registration submission</td></tr>
+        <tr><td>Dark mode chart readability</td><td>Low - visual quality</td><td>Implemented dark-aware chart colors with MutationObserver</td></tr>
+    </tbody>
+</table>
+<p>User resistance was managed through intuitive UI design with premium look and feel. Schedule and budget risks were controlled through close monitoring and phased development. Data security concerns were addressed using access control, role-based permissions, and input validation.</p>
+</div>
+
+<!-- INDEPENDENT REVIEWER SECTION -->
+<h2 class="page-break">Questions for the Independent Reviewer</h2>
+
+<table class="review-table">
+    <thead><tr><th>Question</th><th>Yes</th><th>No</th><th>Comments</th></tr></thead>
+    <tbody>
+        <tr>
+            <td colspan="4" style="background:#f0fdf4;font-weight:700;color:#059669">Stage Summary</td>
+        </tr>
+        <tr>
+            <td>Has the stage been completed satisfactorily?</td>
+            <td><span class="check">&#10003;</span></td>
+            <td></td>
+            <td>The current stage has been completed satisfactorily with all required deliverables produced and reviewed. Minor issues identified during development were resolved promptly.</td>
+        </tr>
+        <tr>
+            <td colspan="4" style="background:#f0fdf4;font-weight:700;color:#059669">Project Tolerances</td>
+        </tr>
+        <tr>
+            <td>Is the project proceeding within budget?</td>
+            <td><span class="check">&#10003;</span></td>
+            <td></td>
+            <td>The project remains within the approved budget with no significant overspending.</td>
+        </tr>
+        <tr>
+            <td>Is the project proceeding within time?</td>
+            <td><span class="check">&#10003;</span></td>
+            <td></td>
+            <td>The project is generally on schedule, with only minor delays that have been managed effectively.</td>
+        </tr>
+        <tr>
+            <td>Is the project proceeding within quality/scope?</td>
+            <td><span class="check">&#10003;</span></td>
+            <td></td>
+            <td>The system is being developed according to the agreed scope and quality standards. Additional features (truck management, dark mode) enhanced the scope without impacting timeline.</td>
+        </tr>
+        <tr>
+            <td colspan="4" style="background:#f0fdf4;font-weight:700;color:#059669">Project Plan Expectations</td>
+        </tr>
+        <tr>
+            <td>Are you satisfied that the next stage has been planned appropriately?</td>
+            <td><span class="check">&#10003;</span></td>
+            <td></td>
+            <td>The next stage is properly planned with clear tasks, timeline, and resources identified.</td>
+        </tr>
+        <tr>
+            <td>Is the milestone for the next stage appropriate?</td>
+            <td><span class="check">&#10003;</span></td>
+            <td></td>
+            <td>The milestone is realistic and aligns with the project schedule and deliverables.</td>
+        </tr>
+        <tr>
+            <td colspan="4" style="background:#f0fdf4;font-weight:700;color:#059669">Business Case Review</td>
+        </tr>
+        <tr>
+            <td>Is the project still on track to meet the overall objectives?</td>
+            <td><span class="check">&#10003;</span></td>
+            <td></td>
+            <td>The SmartWaste project is still on track to meet its objectives of improving waste management efficiency and data handling in Tuy, Batangas.</td>
+        </tr>
+        <tr>
+            <td colspan="4" style="background:#f0fdf4;font-weight:700;color:#059669">Risk Review</td>
+        </tr>
+        <tr>
+            <td>Have the project risks been identified, updated and plans for their management identified?</td>
+            <td><span class="check">&#10003;</span></td>
+            <td></td>
+            <td>Risks have been identified, regularly updated, and managed through mitigation strategies such as testing, training, and monitoring.</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="question-box" style="margin-top:20px">
+    <div class="q">Should the project move onto the next milestone/stage?</div>
+    <div class="a" style="display:flex;gap:30px;margin-top:8px">
+        <span><strong>Yes</strong> <span class="check">&#10003;</span></span>
+        <span><strong>No</strong> &#9744;</span>
+    </div>
+    <div style="margin-top:16px">
+        <p style="font-size:10pt;color:#6b7280">Signature of Independent Reviewer: ___________________________ &nbsp;&nbsp; Date: _______________</p>
+    </div>
+</div>
+
+<p style="margin-top:20px;font-size:10pt;color:#6b7280;text-align:center;font-style:italic">PLEASE RETURN A COMPLETED VERSION OF THIS FORM TO THE PROJECT MANAGER.</p>
+
+<!-- SIGNATURES -->
+<h2 class="page-break">Signatures</h2>
+
+<div class="sig-grid">
+    <div class="sig-block">
+        <div class="sig-line"></div>
+        <div class="sig-label">Prepared by:</div>
+        <div class="sig-name">Author</div>
+    </div>
+    <div class="sig-block">
+        <div class="sig-line"></div>
+        <div class="sig-label">Noted by:</div>
+        <div class="sig-name">Project Leader</div>
+    </div>
+</div>
+
+<div style="text-align:center;margin-top:40px">
+    <div style="display:inline-block">
+        <div class="sig-line" style="width:300px"></div>
+        <div class="sig-label">Approved by:</div>
+        <div class="sig-name">Project Manager</div>
+    </div>
+</div>
+
+<footer>
+    <span>SmartWaste Route - Completed Milestone Report v1.0</span>
+    <span>May 6, 2026</span>
+</footer>
+
+<script>window.onload = function() { window.print(); }</script>
+</body>
+</html>

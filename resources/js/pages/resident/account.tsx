@@ -116,13 +116,11 @@ export default function ResidentAccount({ stats }: Props) {
         { icon: MapPin, label: 'My Zone', value: stats.zone ?? 'Not set', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/40', href: '/resident/location/setup' },
     ];
 
-    return (
+    // ─── Mobile layout (untouched) ───
+    const mobileLayout = (
         <>
             <Head title="My Account" />
             <div className="flex min-h-screen flex-col bg-neutral-50 dark:bg-neutral-950">
-                {!isMobile && <ResidentTopbar />}
-
-                {/* ===== Header ===== */}
                 <div className="relative mb-16">
                     <div className="relative h-48 overflow-hidden bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 dark:from-emerald-700 dark:via-emerald-800 dark:to-teal-800">
                         <div className="absolute right-[-30px] top-[-20px] h-40 w-40 rounded-full bg-white/10" />
@@ -151,14 +149,12 @@ export default function ResidentAccount({ stats }: Props) {
                     </div>
                 </div>
 
-                {/* ===== Name + Role ===== */}
                 <div className="text-center px-4">
                     <h2 className="text-xl font-bold text-neutral-900 dark:text-white">{auth.user.name}</h2>
                     <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">{auth.user.email}</p>
                     <span className="mt-2 inline-flex items-center rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-semibold capitalize text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400">Resident</span>
                 </div>
 
-                {/* ===== Quick Stats ===== */}
                 <div className="mt-5 px-4">
                     <div className="grid grid-cols-2 gap-3">
                         {quickActions.map((item) => (
@@ -171,86 +167,43 @@ export default function ResidentAccount({ stats }: Props) {
                     </div>
                 </div>
 
-                {/* ===== Settings Accordions ===== */}
                 <div className="mt-5 px-4">
                     <div className="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-neutral-900">
-
-                        {/* Edit Profile */}
                         <AccordionRow icon={Pencil} label="Edit Profile" isOpen={openSection === 'profile'} onToggle={() => toggle('profile')}>
                             <div className="space-y-3">
-                                <div className="grid gap-1">
-                                    <label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400"><UserIcon size={11} /> Name</label>
-                                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className={inputCls} />
-                                    <InputError message={profileErrors.name} />
-                                </div>
-                                <div className="grid gap-1">
-                                    <label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400"><Mail size={11} /> Email</label>
-                                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" className={inputCls} />
-                                    <InputError message={profileErrors.email} />
-                                </div>
+                                <div className="grid gap-1"><label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400"><UserIcon size={11} /> Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className={inputCls} /><InputError message={profileErrors.name} /></div>
+                                <div className="grid gap-1"><label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400"><Mail size={11} /> Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" className={inputCls} /><InputError message={profileErrors.email} /></div>
                                 <div className="flex gap-2 pt-1">
                                     <button onClick={() => toggle('profile')} disabled={profileProcessing} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400"><X size={15} /> Cancel</button>
                                     <button onClick={handleSaveProfile} disabled={profileProcessing} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50"><Check size={15} /> {profileProcessing ? 'Saving...' : 'Save'}</button>
                                 </div>
                             </div>
                         </AccordionRow>
-
-                        {/* Password */}
                         <AccordionRow icon={KeyRound} label="Password" isOpen={openSection === 'password'} onToggle={() => toggle('password')}>
-                            <Form
-                                {...PasswordController.update.form()}
-                                options={{ preserveScroll: true }}
-                                resetOnError={['password', 'password_confirmation', 'current_password']}
-                                resetOnSuccess
-                                onSuccess={() => { setOpenSection(null); successAlert('Password updated'); }}
-                                className="space-y-3"
-                            >
-                                {({ errors, processing }) => (
-                                    <>
-                                        <div className="grid gap-1">
-                                            <label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400"><Lock size={11} /> Current password</label>
-                                            <input name="current_password" type="password" autoComplete="current-password" placeholder="Current password" className={inputCls} />
-                                            <InputError message={errors.current_password} />
-                                        </div>
-                                        <div className="grid gap-1">
-                                            <label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400"><ShieldCheck size={11} /> New password</label>
-                                            <input name="password" type="password" autoComplete="new-password" placeholder="New password" className={inputCls} />
-                                            <InputError message={errors.password} />
-                                        </div>
-                                        <div className="grid gap-1">
-                                            <label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400"><ShieldCheck size={11} /> Confirm password</label>
-                                            <input name="password_confirmation" type="password" autoComplete="new-password" placeholder="Confirm password" className={inputCls} />
-                                            <InputError message={errors.password_confirmation} />
-                                        </div>
-                                        <button type="submit" disabled={processing} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50">
-                                            {processing ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <Check size={15} />}
-                                            {processing ? 'Saving...' : 'Save password'}
-                                        </button>
-                                    </>
-                                )}
+                            <Form {...PasswordController.update.form()} options={{ preserveScroll: true }} resetOnError={['password', 'password_confirmation', 'current_password']} resetOnSuccess onSuccess={() => { setOpenSection(null); successAlert('Password updated'); }} className="space-y-3">
+                                {({ errors, processing }) => (<>
+                                    <div className="grid gap-1"><label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400"><Lock size={11} /> Current password</label><input name="current_password" type="password" autoComplete="current-password" placeholder="Current password" className={inputCls} /><InputError message={errors.current_password} /></div>
+                                    <div className="grid gap-1"><label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400"><ShieldCheck size={11} /> New password</label><input name="password" type="password" autoComplete="new-password" placeholder="New password" className={inputCls} /><InputError message={errors.password} /></div>
+                                    <div className="grid gap-1"><label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400"><ShieldCheck size={11} /> Confirm password</label><input name="password_confirmation" type="password" autoComplete="new-password" placeholder="Confirm password" className={inputCls} /><InputError message={errors.password_confirmation} /></div>
+                                    <button type="submit" disabled={processing} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50">{processing ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <Check size={15} />}{processing ? 'Saving...' : 'Save password'}</button>
+                                </>)}
                             </Form>
                         </AccordionRow>
-
-                        {/* Appearance */}
                         <AccordionRow icon={Palette} label="Appearance" isOpen={openSection === 'appearance'} onToggle={() => toggle('appearance')} isLast>
                             <AppearanceTabs />
                         </AccordionRow>
-
                     </div>
                 </div>
 
-                {/* ===== Remove Avatar ===== */}
                 {auth.user.avatar && (
                     <div className="mt-3 px-4">
-                        <button onClick={() => router.delete('/settings/profile/avatar', { preserveScroll: true, onSuccess: () => setAvatarPreview(null) })}
-                            className="flex w-full items-center gap-4 rounded-2xl bg-white px-4 py-3.5 shadow-sm transition-colors hover:bg-neutral-50 active:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800/50">
+                        <button onClick={() => router.delete('/settings/profile/avatar', { preserveScroll: true, onSuccess: () => setAvatarPreview(null) })} className="flex w-full items-center gap-4 rounded-2xl bg-white px-4 py-3.5 shadow-sm transition-colors hover:bg-neutral-50 active:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800/50">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500 dark:bg-red-950/50 dark:text-red-400"><Trash2 size={18} strokeWidth={1.8} /></div>
                             <span className="flex-1 text-left text-sm font-medium text-red-600 dark:text-red-400">Remove Photo</span>
                         </button>
                     </div>
                 )}
 
-                {/* ===== Logout ===== */}
                 <div className="mt-3 px-4 pb-36">
                     <button onClick={handleLogout} className="flex w-full items-center gap-4 rounded-2xl bg-white px-4 py-3.5 shadow-sm transition-colors hover:bg-red-50 active:bg-red-100 dark:bg-neutral-900 dark:hover:bg-red-950/30">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500 dark:bg-red-950/50 dark:text-red-400"><LogOut size={18} strokeWidth={1.8} /></div>
@@ -258,7 +211,113 @@ export default function ResidentAccount({ stats }: Props) {
                     </button>
                 </div>
 
-                {isMobile && <ResidentBottombar />}
+                <ResidentBottombar />
+            </div>
+        </>
+    );
+
+    if (isMobile) return mobileLayout;
+
+    // ─── Desktop layout (premium) ───
+    return (
+        <>
+            <Head title="My Account" />
+            <div className="flex min-h-screen flex-col bg-neutral-50 dark:bg-neutral-950">
+                <ResidentTopbar />
+                <div className="mx-auto w-full max-w-7xl px-6 py-6">
+                    <div className="grid gap-6 lg:grid-cols-3">
+                        {/* Left: Profile card */}
+                        <div className="space-y-4">
+                            <div className="overflow-hidden rounded-2xl border border-neutral-200/60 bg-white shadow-sm dark:border-neutral-700/60 dark:bg-neutral-900">
+                                {/* Profile header */}
+                                <div className="relative h-28 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-500">
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_60%)]" />
+                                </div>
+                                <div className="relative -mt-12 px-5 pb-5">
+                                    <div className="group relative inline-block">
+                                        <div className="rounded-full bg-gradient-to-br from-emerald-400 to-teal-400 p-[3px] shadow-xl shadow-emerald-600/20">
+                                            <Avatar className="h-20 w-20 border-[3px] border-white dark:border-neutral-900">
+                                                <AvatarImage src={displayAvatar ?? undefined} alt={auth.user.name} className="object-cover" />
+                                                <AvatarFallback className="bg-gradient-to-br from-emerald-100 to-teal-100 text-xl font-bold text-emerald-700 dark:from-emerald-900 dark:to-teal-900 dark:text-emerald-300">{getInitials(auth.user.name)}</AvatarFallback>
+                                            </Avatar>
+                                        </div>
+                                        <button type="button" onClick={() => fileInputRef.current?.click()} className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-md transition-transform hover:scale-110 dark:border-neutral-900"><Camera size={13} /></button>
+                                        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleAvatarChange} />
+                                    </div>
+                                    <div className="mt-3">
+                                        <h2 className="text-lg font-bold text-neutral-900 dark:text-white">{auth.user.name}</h2>
+                                        <p className="text-sm text-neutral-500 dark:text-neutral-400">{auth.user.email}</p>
+                                        <span className="mt-2 inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">Resident</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Quick stats */}
+                            <div className="grid grid-cols-2 gap-3">
+                                {quickActions.map((item) => (
+                                    <Link key={item.label} href={item.href} className={`overflow-hidden rounded-2xl border border-neutral-200/60 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-neutral-700/60 dark:bg-neutral-900`}>
+                                        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.bg}`}><item.icon size={18} className={item.color} /></div>
+                                        <p className="mt-2 text-xl font-extrabold text-neutral-900 dark:text-white">{item.value}</p>
+                                        <p className="text-[11px] text-neutral-400">{item.label}</p>
+                                    </Link>
+                                ))}
+                            </div>
+
+                            {/* Logout */}
+                            <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/60 bg-white px-4 py-3.5 shadow-sm transition-all hover:border-red-200 hover:bg-red-50 dark:border-neutral-700/60 dark:bg-neutral-900 dark:hover:border-red-900/50 dark:hover:bg-red-950/20">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 dark:bg-red-950/50"><LogOut size={16} className="text-red-500 dark:text-red-400" /></div>
+                                <span className="text-sm font-medium text-red-600 dark:text-red-400">Logout</span>
+                            </button>
+                        </div>
+
+                        {/* Right: Settings cards */}
+                        <div className="space-y-4 lg:col-span-2">
+                            {/* Edit Profile */}
+                            <div className="overflow-hidden rounded-2xl border border-neutral-200/60 bg-white shadow-sm dark:border-neutral-700/60 dark:bg-neutral-900">
+                                <div className="flex items-center gap-3 border-b border-neutral-100 px-5 py-4 dark:border-neutral-800">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/50"><Pencil size={16} className="text-emerald-600 dark:text-emerald-400" /></div>
+                                    <div><h3 className="text-sm font-bold text-neutral-900 dark:text-white">Edit Profile</h3><p className="text-[11px] text-neutral-400">Update your name and email</p></div>
+                                </div>
+                                <div className="space-y-4 p-5">
+                                    <div><label className="mb-1.5 block text-xs font-semibold text-neutral-600 dark:text-neutral-400">Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className={inputCls} /><InputError message={profileErrors.name} /></div>
+                                    <div><label className="mb-1.5 block text-xs font-semibold text-neutral-600 dark:text-neutral-400">Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" className={inputCls} /><InputError message={profileErrors.email} /></div>
+                                    <button onClick={handleSaveProfile} disabled={profileProcessing} className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition-all hover:shadow-md disabled:opacity-50">
+                                        {profileProcessing ? 'Saving...' : 'Save changes'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Password */}
+                            <div className="overflow-hidden rounded-2xl border border-neutral-200/60 bg-white shadow-sm dark:border-neutral-700/60 dark:bg-neutral-900">
+                                <div className="flex items-center gap-3 border-b border-neutral-100 px-5 py-4 dark:border-neutral-800">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/50"><KeyRound size={16} className="text-emerald-600 dark:text-emerald-400" /></div>
+                                    <div><h3 className="text-sm font-bold text-neutral-900 dark:text-white">Password</h3><p className="text-[11px] text-neutral-400">Update your password</p></div>
+                                </div>
+                                <Form {...PasswordController.update.form()} options={{ preserveScroll: true }} resetOnError={['password', 'password_confirmation', 'current_password']} resetOnSuccess onSuccess={() => successAlert('Password updated')} className="space-y-4 p-5">
+                                    {({ errors, processing }) => (<>
+                                        <div><label className="mb-1.5 block text-xs font-semibold text-neutral-600 dark:text-neutral-400">Current password</label><input name="current_password" type="password" autoComplete="current-password" placeholder="Enter current password" className={inputCls} /><InputError message={errors.current_password} /></div>
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div><label className="mb-1.5 block text-xs font-semibold text-neutral-600 dark:text-neutral-400">New password</label><input name="password" type="password" autoComplete="new-password" placeholder="New password" className={inputCls} /><InputError message={errors.password} /></div>
+                                            <div><label className="mb-1.5 block text-xs font-semibold text-neutral-600 dark:text-neutral-400">Confirm password</label><input name="password_confirmation" type="password" autoComplete="new-password" placeholder="Confirm password" className={inputCls} /><InputError message={errors.password_confirmation} /></div>
+                                        </div>
+                                        <button type="submit" disabled={processing} className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition-all hover:shadow-md disabled:opacity-50">{processing ? 'Saving...' : 'Save password'}</button>
+                                    </>)}
+                                </Form>
+                            </div>
+
+                            {/* Appearance */}
+                            <div className="overflow-hidden rounded-2xl border border-neutral-200/60 bg-white shadow-sm dark:border-neutral-700/60 dark:bg-neutral-900">
+                                <div className="flex items-center gap-3 border-b border-neutral-100 px-5 py-4 dark:border-neutral-800">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/50"><Palette size={16} className="text-emerald-600 dark:text-emerald-400" /></div>
+                                    <div><h3 className="text-sm font-bold text-neutral-900 dark:text-white">Appearance</h3><p className="text-[11px] text-neutral-400">Choose your preferred theme</p></div>
+                                </div>
+                                <div className="p-5">
+                                    <AppearanceTabs />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </>
     );

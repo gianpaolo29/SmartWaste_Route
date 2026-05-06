@@ -30,14 +30,6 @@ const isInsideTuyBounds = (lat: number, lng: number) =>
     lng >= TUY_BOUNDS.minLng &&
     lng <= TUY_BOUNDS.maxLng;
 
-const normalize = (s: unknown) =>
-    String(s ?? '')
-        .toLowerCase()
-        .trim()
-        .replace(/^brgy\.?\s*/i, '')
-        .replace(/^barangay\s*/i, '')
-        .replace(/\s+/g, ' ');
-
 export default function LocationSetup({ zones }: Props) {
     const { setData } = useForm<FormData>({
         zone_id: '',
@@ -48,68 +40,120 @@ export default function LocationSetup({ zones }: Props) {
 
     const ranRef = useRef(false);
 
-    const denyAndReset = async (title: string, text: string) => {
-        setData('lat', '');
-        setData('lng', '');
-        setData('address_line', '');
-        setData('zone_id', '');
-        await errorAlert(title, text);
-    };
-
-    const reverseGeocodeAndAutoPickZone = async (lat: number, lng: number) => {
+    const autoDetectAndSave = async (lat: number, lng: number) => {
+        // Step 1: Check bounds
         if (!isInsideTuyBounds(lat, lng)) {
-            await denyAndReset('Outside Service Area', 'SmartWaste Route is only available in Tuy, Batangas.');
-            return null;
+            closeLoading();
+            await errorAlert('Outside Service Area', 'SmartWaste Route is only available in Tuy, Batangas.');
+            return;
         }
 
-        const res = await fetch(`/reverse-geocode?lat=${lat}&lng=${lng}`, {
-            headers: { Accept: 'application/json' },
-            credentials: 'include',
-        });
+        // Step 2: Auto-detect zone from coordinates (uses nearest barangay centroid)
+        let zoneId: string | null = null;
+        let barangayName = '';
 
-        const body = await res.json().catch(() => ({}));
+        try {
+            const detectRes = await fetch(`/resident/location/detect-zone?lat=${lat}&lng=${lng}`, {
+                headers: { Accept: 'application/json' },
+                credentials: 'include',
+            });
+            const detectBody = await detectRes.json();
 
-        if (!res.ok) {
-            await errorAlert('Geocoding Failed', body?.message ?? 'Reverse geocoding failed.');
-            return null;
+            if (detectBody.zone?.id) {
+                zoneId = String(detectBody.zone.id);
+                barangayName = detectBody.barangay ?? '';
+            } else if (detectBody.barangay) {
+                // Barangay detected but no active zone — try matching from the zones list
+                barangayName = detectBody.barangay;
+                const normalizedDetected = barangayName.toLowerCase().trim();
+                const matched = zones.find((z) => {
+                    const zBrg = z.barangay.toLowerCase().trim();
+                    return zBrg.includes(normalizedDetected) || normalizedDetected.includes(zBrg);
+                });
+                if (matched) zoneId = String(matched.id);
+            }
+        } catch {
+            // Detection failed — try reverse geocode as fallback
         }
 
-        const city = normalize(body?.city);
-        const province = normalize(body?.province);
+        // Step 3: If zone detection failed, try reverse geocode
+        if (!zoneId) {
+            try {
+                const geoRes = await fetch(`/reverse-geocode?lat=${lat}&lng=${lng}`, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'include',
+                });
+                const geoBody = await geoRes.json();
+                const suburb = (geoBody?.suburb || geoBody?.village || '').toLowerCase().trim()
+                    .replace(/^brgy\.?\s*/i, '').replace(/^barangay\s*/i, '');
 
-        if (city !== 'tuy' || !province.includes('batangas')) {
-            await denyAndReset(
-                'Denied',
-                `Only Tuy, Batangas is allowed. Detected: ${body?.city ?? 'Unknown'}, ${body?.province ?? 'Unknown'}.`,
-            );
-            return null;
+                if (suburb) {
+                    const matched = zones.find((z) => {
+                        const zBrg = z.barangay.toLowerCase().trim();
+                        return zBrg.includes(suburb) || suburb.includes(zBrg);
+                    });
+                    if (matched) {
+                        zoneId = String(matched.id);
+                        barangayName = geoBody?.suburb || geoBody?.village || '';
+                    }
+                }
+            } catch {
+                // Geocode also failed
+            }
         }
 
-        const addressLine = [body.road, body.suburb || body.village, body.city, body.province]
-            .filter(Boolean)
-            .join(', ');
+        // Step 4: If still no zone, pick the first zone as fallback (at least save the location)
+        if (!zoneId && zones.length > 0) {
+            zoneId = String(zones[0].id);
+            barangayName = zones[0].barangay;
+        }
 
-        const detectedBarangay = normalize(
-            body?.suburb || body?.village || body?.raw?.suburb || body?.raw?.village || body?.raw?.neighbourhood,
+        if (!zoneId) {
+            closeLoading();
+            await errorAlert('No Zones Available', 'No active zones are configured yet. Please contact your administrator.');
+            return;
+        }
+
+        // Step 5: Build address
+        const addressLine = barangayName
+            ? `${barangayName}, Tuy, Batangas`
+            : 'Tuy, Batangas';
+
+        // Step 6: Save
+        setData('zone_id', zoneId);
+        setData('address_line', addressLine);
+        setData('lat', String(lat));
+        setData('lng', String(lng));
+
+        loading('Saving your location…');
+
+        router.post(
+            '/resident/location/setup',
+            {
+                zone_id: zoneId,
+                address_line: addressLine,
+                lat: String(lat),
+                lng: String(lng),
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    closeLoading();
+                    successAlert('Location Saved', `You have been assigned to ${barangayName || 'your nearest zone'}.`);
+                    router.visit('/resident/dashboard');
+                },
+                onError: () => {
+                    closeLoading();
+                    errorAlert('Save Failed', 'Could not save your location. Please try again.');
+                },
+            },
         );
-
-        const matched = zones.find((z) => normalize(z.barangay) === detectedBarangay);
-
-        if (!matched) {
-            await denyAndReset(
-                'Zone Not Matched',
-                `We detected "${body?.suburb || body?.village || 'Unknown'}", but it doesn't match any configured barangay/zone.`,
-            );
-            return null;
-        }
-
-        return { zone_id: String(matched.id), address_line: addressLine || '' };
     };
 
     const runAutoSetup = async () => {
         const confirmed = await infoConfirm(
             'Allow Location Access?',
-            'We will automatically detect your GPS location, verify your area, and set up your service address.',
+            'We will automatically detect your GPS location and assign you to the nearest collection zone in Tuy, Batangas.',
             'Allow',
             'Deny',
         );
@@ -125,43 +169,7 @@ export default function LocationSetup({ zones }: Props) {
 
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-
-                setData('lat', String(lat));
-                setData('lng', String(lng));
-
-                const result = await reverseGeocodeAndAutoPickZone(lat, lng);
-                closeLoading();
-
-                if (!result) return;
-
-                setData('zone_id', result.zone_id);
-                setData('address_line', result.address_line);
-
-                loading('Saving your location…');
-
-                router.post(
-                    '/resident/location/setup',
-                    {
-                        zone_id: result.zone_id,
-                        address_line: result.address_line,
-                        lat: String(lat),
-                        lng: String(lng),
-                    },
-                    {
-                        preserveScroll: true,
-                        onSuccess: () => {
-                            closeLoading();
-                            successAlert('Location Saved', 'Your service location has been set up.');
-                            router.visit('/resident/dashboard');
-                        },
-                        onError: () => {
-                            closeLoading();
-                            errorAlert('Save Failed', 'Could not save your location. Please try again.');
-                        },
-                    },
-                );
+                await autoDetectAndSave(pos.coords.latitude, pos.coords.longitude);
             },
             () => {
                 closeLoading();

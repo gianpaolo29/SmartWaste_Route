@@ -50,7 +50,7 @@ class ProfileController extends Controller
 
         $user->save();
 
-        return to_route('profile.edit');
+        return back();
     }
 
     /**
@@ -66,7 +66,7 @@ class ProfileController extends Controller
             $user->save();
         }
 
-        return to_route('profile.edit');
+        return back();
     }
 
     /**

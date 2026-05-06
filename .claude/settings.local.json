@@ -22,7 +22,11 @@
       "Bash(composer require:*)",
       "Bash(grep -E \"\\\\.\\(php|tsx|ts\\)$\")",
       "Bash(ls .env*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git checkout:*)",
+      "Bash(pdftotext \"/c/Users/Windows/Herd/SmartWaste-Route/public/Test report.pdf\" -)",
+      "Bash(pdftotext:*)",
+      "Bash(ls -lah /c/Users/Windows/Herd/SmartWaste-Route/public/*.png /c/Users/Windows/Herd/SmartWaste-Route/public/*.ico /c/Users/Windows/Herd/SmartWaste-Route/public/*.svg)"
     ]
   }
 }

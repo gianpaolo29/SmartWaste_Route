@@ -1,6 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
-import { ChevronDown, ClipboardList, Home, LogOut, Route, Truck, User } from 'lucide-react';
+import { ChevronDown, ClipboardList, Home, LogOut, Route, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     DropdownMenu,
@@ -49,9 +49,8 @@ export function CollectorTopbar() {
                     <motion.div
                         whileHover={{ scale: 1.05, rotate: -3 }}
                         whileTap={{ scale: 0.95 }}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20 transition-shadow group-hover:shadow-lg group-hover:shadow-emerald-600/30"
                     >
-                        <Truck size={18} strokeWidth={2.2} />
+                        <img src="/logo.png" alt="SmartWaste" className="h-9 w-9 object-contain" />
                     </motion.div>
                     <div className="hidden sm:block">
                         <p className="text-sm font-bold leading-tight text-neutral-900 dark:text-white">SmartWaste</p>

@@ -8,6 +8,7 @@ use App\Models\Household;
 use App\Models\CollectionReport;
 use App\Models\MissedPickupReport;
 use App\Models\User;
+use App\Models\Truck;
 use App\Models\Zone;
 use App\Support\TuyBarangayBoundaries;
 use Illuminate\Http\Request;
@@ -17,21 +18,34 @@ use Inertia\Inertia;
 
 class AdminListController extends Controller
 {
-    public function dashboard()
+    public function dashboard(Request $request)
     {
+        $period = $request->get('period', 'all');
+        $periodStart = match ($period) {
+            'today' => now()->startOfDay(),
+            'week' => now()->subDays(7),
+            'month' => now()->subDays(30),
+            default => null,
+        };
+        $routeQuery = fn () => \App\Models\RoutePlan::when($periodStart, fn ($q) => $q->where('created_at', '>=', $periodStart));
+        $reportQuery = fn () => MissedPickupReport::when($periodStart, fn ($q) => $q->where('created_at', '>=', $periodStart));
+        $wasteQuery = fn () => CollectionReport::when($periodStart, fn ($q) => $q->where('report_date', '>=', $periodStart));
+
         $stats = [
-            'residents' => User::where('role', 'resident')->count(),
+            'residents' => User::where('role', 'resident')->when($periodStart, fn ($q) => $q->where('created_at', '>=', $periodStart))->count(),
             'collectors' => User::where('role', 'collector')->count(),
+            'trucks' => Truck::count(),
+            'trucks_available' => Truck::where('status', 'available')->count(),
             'active_zones' => Zone::where('active', true)->count(),
-            'total_routes' => \App\Models\RoutePlan::count(),
-            'active_routes' => \App\Models\RoutePlan::where('status', 'in_progress')->count(),
-            'completed_routes' => \App\Models\RoutePlan::where('status', 'completed')->count(),
+            'total_routes' => $routeQuery()->count(),
+            'active_routes' => $routeQuery()->where('status', 'in_progress')->count(),
+            'completed_routes' => $routeQuery()->where('status', 'completed')->count(),
             'total_barangays' => Barangay::count(),
-            'open_reports' => MissedPickupReport::where('status', 'open')->count(),
-            'total_reports' => MissedPickupReport::count(),
+            'open_reports' => $reportQuery()->where('status', 'open')->count(),
+            'total_reports' => $reportQuery()->count(),
             'today_routes' => \App\Models\RoutePlan::whereDate('route_date', today())->count(),
-            'total_waste' => round(CollectionReport::selectRaw('COALESCE(SUM(mixed_waste + biodegradable + recyclable + residual + solid_waste), 0) as t')->value('t'), 1),
-            'total_stops_served' => \App\Models\Collection::where('status', 'collected')->count(),
+            'total_waste' => round($wasteQuery()->selectRaw('COALESCE(SUM(mixed_waste + biodegradable + recyclable + residual + solid_waste), 0) as t')->value('t'), 1),
+            'total_stops_served' => \App\Models\Collection::where('status', 'collected')->when($periodStart, fn ($q) => $q->where('created_at', '>=', $periodStart))->count(),
         ];
 
         $recentRoutes = \App\Models\RoutePlan::with(['zone.barangays', 'collector'])
@@ -90,12 +104,49 @@ class AdminListController extends Controller
             ])
             ->values();
 
+        // Monthly waste trend (last 30 days by date)
+        $monthlyWaste = CollectionReport::where('report_date', '>=', now()->subDays(29)->toDateString())
+            ->orderBy('report_date')
+            ->get()
+            ->groupBy(fn ($r) => $r->report_date->toDateString())
+            ->map(fn ($group, $date) => [
+                'date' => $date,
+                'mixed' => round($group->sum('mixed_waste'), 1),
+                'bio' => round($group->sum('biodegradable'), 1),
+                'recyclable' => round($group->sum('recyclable'), 1),
+                'residual' => round($group->sum('residual'), 1),
+                'solid' => round($group->sum('solid_waste'), 1),
+                'total' => round($group->sum(fn ($r) => $r->mixed_waste + $r->biodegradable + $r->recyclable + $r->residual + $r->solid_waste), 1),
+            ])
+            ->values();
+
+        // Waste breakdown by type (all time)
+        $wasteBreakdown = [
+            ['name' => 'Mixed', 'value' => round(CollectionReport::sum('mixed_waste'), 1)],
+            ['name' => 'Biodegradable', 'value' => round(CollectionReport::sum('biodegradable'), 1)],
+            ['name' => 'Recyclable', 'value' => round(CollectionReport::sum('recyclable'), 1)],
+            ['name' => 'Residual', 'value' => round(CollectionReport::sum('residual'), 1)],
+            ['name' => 'Solid', 'value' => round(CollectionReport::sum('solid_waste'), 1)],
+        ];
+
+        // Route status breakdown
+        $routeBreakdown = [
+            ['name' => 'Completed', 'value' => \App\Models\RoutePlan::where('status', 'completed')->count()],
+            ['name' => 'In Progress', 'value' => \App\Models\RoutePlan::where('status', 'in_progress')->count()],
+            ['name' => 'Planned', 'value' => \App\Models\RoutePlan::where('status', 'planned')->count()],
+            ['name' => 'Cancelled', 'value' => \App\Models\RoutePlan::where('status', 'cancelled')->count()],
+        ];
+
         return Inertia::render('admin/dashboard', [
             'stats' => $stats,
             'recentRoutes' => $recentRoutes,
             'recentReports' => $recentReports,
             'collectorPerformance' => $collectorPerformance,
             'wasteTrend' => $wasteTrend,
+            'monthlyWaste' => $monthlyWaste,
+            'wasteBreakdown' => $wasteBreakdown,
+            'routeBreakdown' => $routeBreakdown,
+            'period' => $period,
         ]);
     }
 
@@ -136,7 +187,7 @@ class AdminListController extends Controller
 
     public function zones()
     {
-        $items = Zone::with('barangays')
+        $items = Zone::with('barangays.households')
             ->withCount('households')
             ->orderBy('name')
             ->get()
@@ -145,7 +196,7 @@ class AdminListController extends Controller
                 'name' => $z->name,
                 'barangays' => $z->barangays->map(fn ($b) => ['id' => $b->id, 'name' => $b->name]),
                 'active' => (bool) $z->active,
-                'households_count' => $z->households_count,
+                'households_count' => $z->households_count ?: $z->barangays->sum(fn ($b) => $b->households->count()),
                 'description' => $z->description,
             ]);
 
@@ -232,13 +283,18 @@ class AdminListController extends Controller
                         'barangay' => $hh->zone->barangayNames(),
                     ] : null,
                     'address' => $hh?->address_line,
+                    'created_at' => $u->created_at->toISOString(),
                 ];
             });
 
+        $now = now();
         $stats = [
             'total' => User::where('role', 'resident')->count(),
             'active' => User::where('role', 'resident')->where('status', 'active')->count(),
             'inactive' => User::where('role', 'resident')->where('status', '!=', 'active')->count(),
+            'today' => User::where('role', 'resident')->whereDate('created_at', $now->toDateString())->count(),
+            'this_week' => User::where('role', 'resident')->where('created_at', '>=', $now->copy()->subDays(7))->count(),
+            'this_month' => User::where('role', 'resident')->where('created_at', '>=', $now->copy()->subDays(30))->count(),
         ];
 
         return Inertia::render('admin/residents/index', ['items' => $items, 'stats' => $stats]);
@@ -526,6 +582,78 @@ class AdminListController extends Controller
         ]);
 
         $report->update(['status' => $data['status']]);
+
+        return back();
+    }
+
+    // ─── Trucks ──────────────────────────────────────────────────────────────
+
+    public function trucks()
+    {
+        $items = Truck::with('collector')
+            ->withCount('routePlans')
+            ->orderBy('plate_no')
+            ->get()
+            ->map(fn ($t) => [
+                'id' => $t->id,
+                'plate_no' => $t->plate_no,
+                'capacity_kg' => $t->capacity_kg,
+                'status' => $t->status,
+                'collector' => $t->collector ? ['id' => $t->collector->id, 'name' => $t->collector->name] : null,
+                'routes_count' => $t->route_plans_count,
+            ]);
+
+        $collectors = User::where('role', 'collector')->where('status', 'active')->orderBy('name')->get(['id', 'name']);
+
+        $stats = [
+            'total' => Truck::count(),
+            'available' => Truck::where('status', 'available')->count(),
+            'maintenance' => Truck::where('status', 'maintenance')->count(),
+            'inactive' => Truck::where('status', 'inactive')->count(),
+        ];
+
+        return Inertia::render('admin/trucks/index', [
+            'items' => $items,
+            'collectors' => $collectors,
+            'stats' => $stats,
+        ]);
+    }
+
+    public function storeTruck(Request $request)
+    {
+        $data = $request->validate([
+            'plate_no' => ['required', 'string', 'max:20', 'unique:trucks,plate_no'],
+            'capacity_kg' => ['required', 'integer', 'min:0'],
+            'status' => ['required', 'in:available,maintenance,inactive'],
+            'collector_user_id' => ['nullable', 'exists:users,id'],
+        ]);
+
+        Truck::create($data);
+
+        return back();
+    }
+
+    public function updateTruck(Request $request, Truck $truck)
+    {
+        $data = $request->validate([
+            'plate_no' => ['required', 'string', 'max:20', Rule::unique('trucks', 'plate_no')->ignore($truck->id)],
+            'capacity_kg' => ['required', 'integer', 'min:0'],
+            'status' => ['required', 'in:available,maintenance,inactive'],
+            'collector_user_id' => ['nullable', 'exists:users,id'],
+        ]);
+
+        $truck->update($data);
+
+        return back();
+    }
+
+    public function destroyTruck(Truck $truck)
+    {
+        if ($truck->routePlans()->where('status', 'in_progress')->exists()) {
+            return back()->withErrors(['truck' => 'Cannot delete a truck with active routes.']);
+        }
+
+        $truck->delete();
 
         return back();
     }

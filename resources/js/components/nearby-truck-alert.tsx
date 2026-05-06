@@ -274,7 +274,7 @@ async function sendNotification(title: string, body: string) {
         try {
             new Notification(title, {
                 body,
-                icon: '/favicon.ico',
+                icon: '/logo.png',
                 tag: 'nearby-truck',
             } as NotificationOptions);
         } catch { /* ignore */ }

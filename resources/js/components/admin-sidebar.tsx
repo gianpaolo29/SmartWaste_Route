@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BarChart3, CalendarDays, ClipboardList, LayoutGrid, MapPin, Route, Truck, Users, Map } from 'lucide-react';
+import { BarChart3, CalendarDays, ClipboardList, LayoutGrid, MapPin, Route, Truck, Users, Map, Container } from 'lucide-react';
 import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
@@ -24,6 +24,7 @@ const managementNav = [
     { title: 'Zones', href: '/admin/zones', icon: MapPin },
     { title: 'Residents', href: '/admin/residents', icon: Users },
     { title: 'Collectors', href: '/admin/collectors', icon: Truck },
+    { title: 'Trucks', href: '/admin/trucks', icon: Container },
 ];
 
 const operationsNav = [
