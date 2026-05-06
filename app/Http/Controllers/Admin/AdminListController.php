@@ -49,6 +49,7 @@ class AdminListController extends Controller
         ];
 
         $recentRoutes = \App\Models\RoutePlan::with(['zone.barangays', 'collector'])
+            ->when($periodStart, fn ($q) => $q->where('created_at', '>=', $periodStart))
             ->orderByDesc('id')
             ->limit(5)
             ->get()
@@ -63,7 +64,7 @@ class AdminListController extends Controller
 
         // Recent missed pickup reports
         $recentReports = MissedPickupReport::with(['resident', 'zone.barangays'])
-            ->where('status', 'open')
+            ->when($periodStart, fn ($q) => $q->where('created_at', '>=', $periodStart))
             ->orderByDesc('report_datetime')
             ->limit(5)
             ->get()
@@ -80,8 +81,8 @@ class AdminListController extends Controller
         $collectorPerformance = User::where('role', 'collector')
             ->where('status', 'active')
             ->withCount([
-                'assignedRoutePlans as completed_count' => fn ($q) => $q->where('status', 'completed'),
-                'assignedRoutePlans as total_count',
+                'assignedRoutePlans as completed_count' => fn ($q) => $q->where('status', 'completed')->when($periodStart, fn ($q2) => $q2->where('created_at', '>=', $periodStart)),
+                'assignedRoutePlans as total_count' => fn ($q) => $q->when($periodStart, fn ($q2) => $q2->where('created_at', '>=', $periodStart)),
             ])
             ->get()
             ->map(fn ($u) => [
@@ -94,8 +95,9 @@ class AdminListController extends Controller
             ->values()
             ->take(5);
 
-        // Weekly waste trend (last 7 days)
-        $wasteTrend = CollectionReport::where('report_date', '>=', now()->subDays(6)->toDateString())
+        // Weekly waste trend (respects period filter)
+        $trendStart = $periodStart ?? now()->subDays(6);
+        $wasteTrend = CollectionReport::where('report_date', '>=', $trendStart->toDateString())
             ->get()
             ->groupBy(fn ($r) => $r->report_date->format('D'))
             ->map(fn ($group, $day) => [
@@ -104,8 +106,9 @@ class AdminListController extends Controller
             ])
             ->values();
 
-        // Monthly waste trend (last 30 days by date)
-        $monthlyWaste = CollectionReport::where('report_date', '>=', now()->subDays(29)->toDateString())
+        // Monthly waste trend (respects period filter)
+        $monthlyStart = $periodStart ?? now()->subDays(29);
+        $monthlyWaste = CollectionReport::where('report_date', '>=', $monthlyStart->toDateString())
             ->orderBy('report_date')
             ->get()
             ->groupBy(fn ($r) => $r->report_date->toDateString())
@@ -120,21 +123,21 @@ class AdminListController extends Controller
             ])
             ->values();
 
-        // Waste breakdown by type (all time)
+        // Waste breakdown by type (respects period filter)
         $wasteBreakdown = [
-            ['name' => 'Mixed', 'value' => round(CollectionReport::sum('mixed_waste'), 1)],
-            ['name' => 'Biodegradable', 'value' => round(CollectionReport::sum('biodegradable'), 1)],
-            ['name' => 'Recyclable', 'value' => round(CollectionReport::sum('recyclable'), 1)],
-            ['name' => 'Residual', 'value' => round(CollectionReport::sum('residual'), 1)],
-            ['name' => 'Solid', 'value' => round(CollectionReport::sum('solid_waste'), 1)],
+            ['name' => 'Mixed', 'value' => round($wasteQuery()->sum('mixed_waste'), 1)],
+            ['name' => 'Biodegradable', 'value' => round($wasteQuery()->sum('biodegradable'), 1)],
+            ['name' => 'Recyclable', 'value' => round($wasteQuery()->sum('recyclable'), 1)],
+            ['name' => 'Residual', 'value' => round($wasteQuery()->sum('residual'), 1)],
+            ['name' => 'Solid', 'value' => round($wasteQuery()->sum('solid_waste'), 1)],
         ];
 
-        // Route status breakdown
+        // Route status breakdown (respects period filter)
         $routeBreakdown = [
-            ['name' => 'Completed', 'value' => \App\Models\RoutePlan::where('status', 'completed')->count()],
-            ['name' => 'In Progress', 'value' => \App\Models\RoutePlan::where('status', 'in_progress')->count()],
-            ['name' => 'Planned', 'value' => \App\Models\RoutePlan::where('status', 'planned')->count()],
-            ['name' => 'Cancelled', 'value' => \App\Models\RoutePlan::where('status', 'cancelled')->count()],
+            ['name' => 'Completed', 'value' => $routeQuery()->where('status', 'completed')->count()],
+            ['name' => 'In Progress', 'value' => $routeQuery()->where('status', 'in_progress')->count()],
+            ['name' => 'Planned', 'value' => $routeQuery()->where('status', 'planned')->count()],
+            ['name' => 'Cancelled', 'value' => $routeQuery()->where('status', 'cancelled')->count()],
         ];
 
         return Inertia::render('admin/dashboard', [

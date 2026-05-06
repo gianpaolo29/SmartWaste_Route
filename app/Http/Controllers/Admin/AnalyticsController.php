@@ -66,28 +66,67 @@ class AnalyticsController extends Controller
     /* ── Feature 3: Zone Heatmap ── */
     public function zoneHeatmap(Request $request)
     {
-        $zones = Zone::where('active', true)->with('barangays')->get();
+        $centroids = \App\Support\TuyBarangayBoundaries::CENTROIDS;
+        $barangays = \App\Models\Barangay::orderBy('name')->get();
 
-        $zoneWaste = CollectionReport::query()
+        // Waste per barangay via households → route_stops → collections → route_plans → collection_reports
+        $brgWaste = CollectionReport::query()
             ->join('route_plans', 'collection_reports.route_plan_id', '=', 'route_plans.id')
-            ->selectRaw('route_plans.zone_id, SUM(mixed_waste + biodegradable + recyclable + residual + solid_waste) as total_waste, COUNT(*) as report_count')
-            ->groupBy('route_plans.zone_id')
-            ->pluck('total_waste', 'zone_id');
+            ->join('route_stops', 'route_stops.route_plan_id', '=', 'route_plans.id')
+            ->join('households', 'route_stops.household_id', '=', 'households.id')
+            ->selectRaw('households.barangay_id, SUM(mixed_waste + biodegradable + recyclable + residual + solid_waste) as total_waste, COUNT(DISTINCT collection_reports.id) as report_count')
+            ->groupBy('households.barangay_id')
+            ->get()
+            ->keyBy('barangay_id');
 
-        $reportCounts = CollectionReport::query()
+        // Waste breakdown per barangay
+        $brgBreakdowns = CollectionReport::query()
             ->join('route_plans', 'collection_reports.route_plan_id', '=', 'route_plans.id')
-            ->selectRaw('route_plans.zone_id, COUNT(*) as report_count')
-            ->groupBy('route_plans.zone_id')
-            ->pluck('report_count', 'zone_id');
+            ->join('route_stops', 'route_stops.route_plan_id', '=', 'route_plans.id')
+            ->join('households', 'route_stops.household_id', '=', 'households.id')
+            ->selectRaw('households.barangay_id, SUM(mixed_waste) as mixed, SUM(biodegradable) as bio, SUM(recyclable) as recyclable, SUM(residual) as residual, SUM(solid_waste) as solid')
+            ->groupBy('households.barangay_id')
+            ->get()
+            ->keyBy('barangay_id');
 
-        $missedByZone = MissedPickupReport::selectRaw('zone_id, COUNT(*) as count')
-            ->groupBy('zone_id')
-            ->pluck('count', 'zone_id');
+        // Missed pickups per barangay (via household)
+        $missedByBrg = MissedPickupReport::query()
+            ->join('households', function ($j) {
+                $j->on('missed_pickup_reports.resident_user_id', '=', 'households.resident_user_id');
+            })
+            ->selectRaw('households.barangay_id, COUNT(*) as count')
+            ->groupBy('households.barangay_id')
+            ->pluck('count', 'barangay_id');
 
+        $maxWaste = $brgWaste->max('total_waste') ?: 1;
+
+        $barangayData = $barangays->map(function ($b) use ($brgWaste, $brgBreakdowns, $missedByBrg, $maxWaste, $centroids) {
+            $waste = $brgWaste[$b->id] ?? null;
+            $bd = $brgBreakdowns[$b->id] ?? null;
+            $totalWaste = round($waste->total_waste ?? 0, 1);
+
+            return [
+                'id' => $b->id,
+                'name' => $b->name,
+                'total_waste' => $totalWaste,
+                'report_count' => $waste->report_count ?? 0,
+                'missed_count' => $missedByBrg[$b->id] ?? 0,
+                'intensity' => round($totalWaste / $maxWaste, 2),
+                'breakdown' => $bd ? [
+                    ['name' => 'Mixed', 'value' => round($bd->mixed, 1), 'color' => '#f59e0b'],
+                    ['name' => 'Biodegradable', 'value' => round($bd->bio, 1), 'color' => '#10b981'],
+                    ['name' => 'Recyclable', 'value' => round($bd->recyclable, 1), 'color' => '#3b82f6'],
+                    ['name' => 'Residual', 'value' => round($bd->residual, 1), 'color' => '#6b7280'],
+                    ['name' => 'Solid', 'value' => round($bd->solid, 1), 'color' => '#ef4444'],
+                ] : [],
+            ];
+        });
+
+        // Missed pickup markers
         $missedMarkers = MissedPickupReport::whereNotNull('lat')
             ->whereNotNull('lng')
             ->where('status', '!=', 'resolved')
-            ->select('id', 'lat', 'lng', 'description', 'status', 'report_datetime')
+            ->select('id', 'lat', 'lng', 'description', 'status')
             ->orderByDesc('report_datetime')
             ->limit(100)
             ->get()
@@ -99,54 +138,29 @@ class AnalyticsController extends Controller
                 'status' => $r->status,
             ]);
 
-        $maxWaste = $zoneWaste->max() ?: 1;
-
-        $zoneData = $zones->map(fn ($z) => [
-            'id' => $z->id,
-            'name' => $z->name,
-            'barangays' => $z->barangays->pluck('name')->join(', '),
-            'total_waste' => round($zoneWaste[$z->id] ?? 0, 1),
-            'report_count' => $reportCounts[$z->id] ?? 0,
-            'missed_count' => $missedByZone[$z->id] ?? 0,
-            'intensity' => round(($zoneWaste[$z->id] ?? 0) / $maxWaste, 2),
-        ]);
-
-        // Waste breakdown per zone for detail panel
-        $zoneBreakdowns = CollectionReport::query()
-            ->join('route_plans', 'collection_reports.route_plan_id', '=', 'route_plans.id')
-            ->selectRaw('route_plans.zone_id, SUM(mixed_waste) as mixed, SUM(biodegradable) as bio, SUM(recyclable) as recyclable, SUM(residual) as residual, SUM(solid_waste) as solid')
-            ->groupBy('route_plans.zone_id')
-            ->get()
-            ->keyBy('zone_id');
-
-        $zoneData = $zoneData->map(function ($z) use ($zoneBreakdowns) {
-            $bd = $zoneBreakdowns[$z['id']] ?? null;
-            $z['breakdown'] = $bd ? [
-                ['name' => 'Mixed', 'value' => round($bd->mixed, 1), 'color' => '#f59e0b'],
-                ['name' => 'Biodegradable', 'value' => round($bd->bio, 1), 'color' => '#10b981'],
-                ['name' => 'Recyclable', 'value' => round($bd->recyclable, 1), 'color' => '#3b82f6'],
-                ['name' => 'Residual', 'value' => round($bd->residual, 1), 'color' => '#6b7280'],
-                ['name' => 'Solid', 'value' => round($bd->solid, 1), 'color' => '#ef4444'],
-            ] : [];
-            return $z;
-        });
-
-        // Collection point heatmap data — household locations with their waste history
-        $heatmapPoints = \App\Models\RouteStop::query()
-            ->join('collections', 'route_stops.id', '=', 'collections.route_stop_id')
-            ->where('collections.status', 'collected')
-            ->whereNotNull('route_stops.lat')
-            ->selectRaw('route_stops.lat, route_stops.lng, COUNT(*) as collections_count')
-            ->groupBy('route_stops.lat', 'route_stops.lng')
-            ->get()
-            ->map(fn ($p) => [
-                'lat' => (float) $p->lat,
-                'lng' => (float) $p->lng,
-                'weight' => $p->collections_count,
-            ]);
+        // Heatmap points — one dot per barangay at its centroid, weighted by waste
+        $heatmapPoints = $barangays->map(function ($b) use ($brgWaste, $centroids) {
+            $coords = $centroids[$b->name] ?? null;
+            if (!$coords) {
+                // Try fuzzy match
+                foreach ($centroids as $key => $c) {
+                    if (str_contains(strtolower($b->name), strtolower($key)) || str_contains(strtolower($key), strtolower($b->name))) {
+                        $coords = $c;
+                        break;
+                    }
+                }
+            }
+            if (!$coords) return null;
+            $waste = $brgWaste[$b->id] ?? null;
+            return [
+                'lat' => $coords[0],
+                'lng' => $coords[1],
+                'weight' => (int) ($waste->total_waste ?? 0),
+            ];
+        })->filter()->values();
 
         return Inertia::render('admin/analytics/zone-heatmap', [
-            'zones' => $zoneData,
+            'barangays' => $barangayData,
             'missedMarkers' => $missedMarkers,
             'heatmapPoints' => $heatmapPoints,
             'mapsApiKey' => config('services.google.maps_api_key'),
