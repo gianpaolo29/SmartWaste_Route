@@ -365,13 +365,11 @@ export default function CollectorRoute({
         const loadVoices = () => {
             const all = window.speechSynthesis.getVoices();
             voicesRef.current = all;
-            const english = all.filter((v) => v.lang.startsWith('en'));
-            const filtered = english.length > 0 ? english : all;
-            setAvailableVoices(filtered);
+            setAvailableVoices(all);
 
             // Auto-select Google UK English Male as default
             if (selectedVoiceIdx === -1) {
-                const defaultIdx = filtered.findIndex((v) => v.name.toLowerCase().includes('google uk english male'));
+                const defaultIdx = all.findIndex((v) => v.name.toLowerCase().includes('google uk english male'));
                 if (defaultIdx >= 0) setSelectedVoiceIdx(defaultIdx);
             }
         };
@@ -695,7 +693,7 @@ export default function CollectorRoute({
                                             <div className="border-b border-neutral-100 px-4 py-2.5 dark:border-neutral-800">
                                                 <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Navigation Voice</p>
                                             </div>
-                                            <div className="max-h-56 overflow-y-auto p-1.5">
+                                            <div className="max-h-72 overflow-y-auto p-1.5">
                                                 {/* Auto option */}
                                                 <button
                                                     onClick={() => { setSelectedVoiceIdx(-1); previewVoice(-1); setShowVoicePicker(false); }}

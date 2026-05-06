@@ -264,19 +264,36 @@ function playNotifySound() {
     } catch { /* ignore */ }
 }
 
-/* ── Browser notification ── */
+/* ── Browser notification (uses service worker when available for background support) ── */
 async function sendNotification(title: string, body: string) {
     if (!('Notification' in window)) return;
     if (Notification.permission === 'default') {
         try { await Notification.requestPermission(); } catch { /* ignore */ }
     }
-    if (Notification.permission === 'granted') {
-        try {
-            new Notification(title, {
+    if (Notification.permission !== 'granted') return;
+
+    try {
+        // Prefer service worker notification (works in background)
+        if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            await reg.showNotification(title, {
                 body,
                 icon: '/logo.png',
+                badge: '/logo.png',
                 tag: 'nearby-truck',
+                vibrate: [200, 100, 200],
+                data: { url: '/resident/dashboard' },
             } as NotificationOptions);
-        } catch { /* ignore */ }
-    }
+            return;
+        }
+    } catch { /* fallback below */ }
+
+    // Fallback: basic Notification API
+    try {
+        new Notification(title, {
+            body,
+            icon: '/logo.png',
+            tag: 'nearby-truck',
+        } as NotificationOptions);
+    } catch { /* ignore */ }
 }
