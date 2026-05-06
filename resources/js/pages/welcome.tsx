@@ -1,6 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
-    Truck,
     Route,
     Leaf,
     BarChart3,
@@ -20,6 +19,10 @@ import {
     Play,
     Menu,
     X,
+    CalendarDays,
+    Truck,
+    Users,
+    ClipboardList,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
@@ -35,76 +38,76 @@ type Feature = {
 const features: Feature[] = [
     {
         icon: Route,
-        title: 'Smart Route Optimization',
+        title: 'Route Planning & Optimization',
         description:
-            'AI-driven algorithms calculate the fastest, most fuel-efficient pickup routes in real time.',
+            'Create and manage optimized collection routes with turn-by-turn voice navigation for collectors in the field.',
         gradient: 'from-emerald-500 to-teal-600',
     },
     {
         icon: MapPin,
-        title: 'Live Bin Tracking',
+        title: 'Zone & Barangay Management',
         description:
-            'Monitor bin fill-levels across the city with IoT sensors and an interactive map.',
+            'Organize collection areas by barangays and zones for structured, efficient waste pickup coverage.',
         gradient: 'from-blue-500 to-cyan-600',
     },
     {
         icon: Bell,
-        title: 'Instant Alerts',
+        title: 'Real-time Notifications',
         description:
-            'Get notified when bins are full, missed, or require urgent attention.',
+            'Residents receive alerts when collection trucks are nearby, so they never miss a pickup.',
         gradient: 'from-violet-500 to-purple-600',
     },
     {
-        icon: BarChart3,
-        title: 'Analytics Dashboard',
+        icon: ClipboardList,
+        title: 'Collection Reports',
         description:
-            'Track collection KPIs, fuel savings, and CO₂ reductions with rich reports.',
+            'Track waste collected per route — mixed waste, biodegradable, recyclable, residual, and solid waste breakdowns.',
         gradient: 'from-orange-500 to-amber-600',
     },
     {
-        icon: Leaf,
-        title: 'Sustainability First',
+        icon: CalendarDays,
+        title: 'Schedule Management',
         description:
-            'Cut emissions and operational costs while building greener communities.',
+            'Plan and manage collection schedules so residents and collectors always know when pickups happen.',
         gradient: 'from-green-500 to-emerald-600',
     },
     {
-        icon: Recycle,
-        title: 'Recycling Insights',
+        icon: BarChart3,
+        title: 'Missed Pickup Reporting',
         description:
-            'Identify recycling patterns and improve waste segregation programs.',
+            'Residents can report missed pickups directly, helping admins identify and resolve service gaps.',
         gradient: 'from-teal-500 to-green-600',
     },
 ];
 
 const steps = [
     {
-        title: 'Sensors Report',
-        description: 'Smart bins broadcast their fill-level to the SmartWaste cloud.',
-        icon: Zap,
-    },
-    {
-        title: 'Routes Generated',
-        description: 'Our engine builds optimal collection routes in seconds.',
+        title: 'Admin Plans Routes',
+        description: 'Admins create optimized collection routes across barangays and zones.',
         icon: Route,
     },
     {
-        title: 'Drivers Collect',
-        description: 'Crews follow turn-by-turn navigation with live updates.',
+        title: 'Schedules Published',
+        description: 'Collection schedules are set and shared with collectors and residents.',
+        icon: CalendarDays,
+    },
+    {
+        title: 'Collectors Navigate',
+        description: 'Collectors follow routes with GPS tracking and voice-guided navigation.',
         icon: Truck,
     },
     {
-        title: 'You Save',
-        description: 'Track fuel, time, and emissions saved on your dashboard.',
+        title: 'Reports & Insights',
+        description: 'Waste data is logged per stop — track totals, breakdowns, and missed pickups.',
         icon: BarChart3,
     },
 ];
 
 const stats = [
-    { value: 42, suffix: '%', label: 'Fuel Saved', icon: Zap },
-    { value: 1200, suffix: '+', label: 'Bins Connected', icon: Globe },
-    { value: 98, suffix: '%', label: 'On-time Pickups', icon: Shield },
-    { value: 30, suffix: 't', label: 'CO₂ Reduced / mo', icon: Leaf },
+    { value: 100, suffix: '%', label: 'Route Coverage', icon: Route },
+    { value: 5, suffix: '', label: 'Waste Categories', icon: Recycle },
+    { value: 3, suffix: '', label: 'User Roles', icon: Users },
+    { value: 24, suffix: '/7', label: 'GPS Tracking', icon: Globe },
 ];
 
 function useCountUp(target: number, duration = 2000, shouldStart = true) {
@@ -282,7 +285,7 @@ function RouteDemo() {
                     Live route simulation
                 </div>
                 <div className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 sm:px-2.5 sm:text-xs dark:bg-emerald-900/30 dark:text-emerald-300">
-                    {active}/{bins.length} bins
+                    {active}/{bins.length} stops
                 </div>
             </div>
         </motion.div>
@@ -357,10 +360,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                         <div className="flex items-center justify-between rounded-2xl border border-white/40 bg-white/70 px-3 py-2.5 shadow-lg shadow-black/[0.03] backdrop-blur-xl sm:px-5 sm:py-3 dark:border-white/5 dark:bg-[#111]/70">
                             {/* Logo */}
                             <a href="#home" className="flex items-center gap-2 font-bold text-[#1b4332] dark:text-emerald-400">
-                                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#2d6a4f] to-[#40916c] text-white shadow-md shadow-emerald-500/20 sm:h-9 sm:w-9 sm:rounded-xl">
-                                    <Truck size={16} className="sm:hidden" />
-                                    <Truck size={18} className="hidden sm:block" />
-                                </div>
+                                <img src="/logo.png" alt="SmartWaste" className="h-8 w-8 flex-shrink-0 object-contain sm:h-9 sm:w-9" />
                                 <span className="hidden text-lg tracking-tight sm:inline">SmartWaste</span>
                             </a>
 
@@ -489,13 +489,13 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                     className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 sm:px-4 sm:py-1.5 sm:text-xs dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300"
                                 >
                                     <Sparkles size={12} />
-                                    AI-Powered Waste Management
+                                    Smart Waste Collection System
                                 </motion.span>
 
                                 <h1 className="mt-5 text-3xl font-bold leading-[1.15] tracking-tight sm:mt-6 sm:text-5xl lg:text-6xl xl:text-7xl">
-                                    Optimize waste.{' '}
+                                    Smarter routes.{' '}
                                     <span className="bg-gradient-to-r from-[#1b4332] via-[#2d6a4f] to-[#52b788] bg-clip-text text-transparent dark:from-emerald-300 dark:via-emerald-400 dark:to-teal-300">
-                                        Empower the planet.
+                                        Cleaner communities.
                                     </span>
                                 </h1>
 
@@ -505,8 +505,9 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                     transition={{ delay: 0.3, duration: 0.6 }}
                                     className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-gray-500 sm:mt-6 sm:text-lg lg:mx-0 dark:text-gray-400"
                                 >
-                                    SmartWaste Route uses real-time data and AI to plan the most efficient
-                                    collection journeys — saving fuel, time, and the environment.
+                                    SmartWaste Route streamlines waste collection with optimized routing,
+                                    real-time GPS tracking, voice-guided navigation for collectors, and
+                                    resident notifications — all in one platform.
                                 </motion.p>
 
                                 <motion.div
@@ -541,17 +542,17 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                 >
                                     <div className="flex items-center gap-1.5">
                                         <Shield size={13} className="text-emerald-600" />
-                                        <span>Enterprise-grade</span>
+                                        <span>Role-based access</span>
                                     </div>
                                     <div className="hidden h-3 w-px bg-gray-200 sm:block dark:bg-gray-700" />
                                     <div className="flex items-center gap-1.5">
                                         <Zap size={13} className="text-emerald-600" />
-                                        <span>Real-time tracking</span>
+                                        <span>Real-time GPS tracking</span>
                                     </div>
                                     <div className="hidden h-3 w-px bg-gray-200 sm:block dark:bg-gray-700" />
                                     <div className="flex items-center gap-1.5">
-                                        <Globe size={13} className="text-emerald-600" />
-                                        <span>Cloud-native</span>
+                                        <Leaf size={13} className="text-emerald-600" />
+                                        <span>Eco-friendly operations</span>
                                     </div>
                                 </motion.div>
                             </motion.div>
@@ -582,10 +583,10 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                     Features
                                 </span>
                                 <h2 className="mt-4 text-2xl font-bold tracking-tight sm:mt-5 sm:text-4xl md:text-5xl">
-                                    Built for modern cities
+                                    Everything you need for waste collection
                                 </h2>
                                 <p className="mx-auto mt-3 max-w-2xl text-base text-gray-500 sm:mt-4 sm:text-lg dark:text-gray-400">
-                                    Everything your operations team needs to run efficient, sustainable collections.
+                                    From route planning to collection reporting — a complete platform for admins, collectors, and residents.
                                 </p>
                             </motion.div>
 
@@ -648,7 +649,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                     Four simple steps
                                 </h2>
                                 <p className="mx-auto mt-3 max-w-2xl text-base text-gray-500 sm:mt-4 sm:text-lg dark:text-gray-400">
-                                    From sensor ping to clean street — efficient waste management made easy.
+                                    From route planning to collection reporting — efficient waste management made simple.
                                 </p>
                             </motion.div>
 
@@ -697,10 +698,10 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                         >
                             <div className="relative">
                                 <h2 className="text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
-                                    Ready to transform your city?
+                                    Ready to optimize your waste collection?
                                 </h2>
                                 <p className="mx-auto mt-3 max-w-xl text-sm text-emerald-100/80 sm:mt-4 sm:text-base">
-                                    Join thousands of municipalities using SmartWaste Route to build cleaner, greener communities.
+                                    Join SmartWaste Route and streamline collection operations for your community.
                                 </p>
                                 <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-4">
                                     <Link
@@ -714,7 +715,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                         href="#contact"
                                         className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-white/10 sm:px-8 sm:py-3.5"
                                     >
-                                        Talk to Sales
+                                        Contact Us
                                     </a>
                                 </div>
                             </div>
@@ -736,7 +737,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                 </span>
                                 <h2 className="mt-4 text-2xl font-bold tracking-tight sm:mt-5 sm:text-4xl md:text-5xl">Get in touch</h2>
                                 <p className="mt-3 text-base text-gray-500 sm:mt-4 sm:text-lg dark:text-gray-400">
-                                    Ready to transform your city's waste management? Let's talk.
+                                    Have questions about SmartWaste Route? We'd love to hear from you.
                                 </p>
                                 <div className="mt-8 flex flex-col items-center gap-4 sm:mt-10 sm:gap-5 lg:items-start">
                                     <div className="flex items-center gap-4">
@@ -756,7 +757,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                         </div>
                                         <div className="text-left">
                                             <p className="text-xs text-gray-400 sm:text-sm">Call us at</p>
-                                            <p className="text-sm font-medium sm:text-base">+1 (555) 123-4567</p>
+                                            <p className="text-sm font-medium sm:text-base">+63 (912) 345-6789</p>
                                         </div>
                                     </div>
                                 </div>
@@ -779,7 +780,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                             value={form.name}
                                             onChange={(e) => setForm({ ...form, name: e.target.value })}
                                             className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm outline-none transition-all focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-white/5 dark:focus:border-emerald-600 dark:focus:bg-white/[0.03]"
-                                            placeholder="John Doe"
+                                            placeholder="Juan Dela Cruz"
                                         />
                                     </div>
                                     <div>
@@ -801,7 +802,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                             value={form.message}
                                             onChange={(e) => setForm({ ...form, message: e.target.value })}
                                             className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm outline-none transition-all focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-white/5 dark:focus:border-emerald-600 dark:focus:bg-white/[0.03]"
-                                            placeholder="Tell us about your project..."
+                                            placeholder="Tell us about your needs..."
                                         />
                                     </div>
                                     <button
@@ -829,13 +830,11 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                 <footer className="border-t border-gray-100 dark:border-white/5">
                     <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 sm:px-6 sm:py-8 md:flex-row">
                         <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#2d6a4f] to-[#40916c] text-white">
-                                <Truck size={13} />
-                            </div>
+                            <img src="/logo.png" alt="SmartWaste" className="h-7 w-7 object-contain" />
                             SmartWaste Route
                         </div>
                         <p className="text-xs text-gray-400 sm:text-sm">
-                            © {new Date().getFullYear()} SmartWaste Route. Building a cleaner tomorrow.
+                            &copy; {new Date().getFullYear()} SmartWaste Route. Building cleaner communities.
                         </p>
                     </div>
                 </footer>
