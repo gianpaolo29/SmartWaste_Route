@@ -9,7 +9,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useInitials } from '@/hooks/use-initials';
 import { confirm as confirmDialog, successAlert, errorAlert } from '@/lib/notify';
 import { logout } from '@/routes';
-import PasswordController from '@/actions/App/Http/Controllers/Settings/PasswordController';
 import {
     AlertTriangle, Camera, Check, ChevronDown, ChevronLeft,
     KeyRound, Lock, LogOut, Mail, MapPin, Palette,
@@ -95,7 +94,7 @@ export default function ResidentAccount({ stats }: Props) {
         formData.append('avatar', file);
         formData.append('name', auth.user.name);
         formData.append('email', auth.user.email);
-        router.post('/settings/profile', formData, {
+        router.post('/resident/profile', formData, {
             forceFormData: true,
             preserveScroll: true,
             preserveState: true,
@@ -114,7 +113,7 @@ export default function ResidentAccount({ stats }: Props) {
     const handleSaveProfile = () => {
         setProfileProcessing(true);
         setProfileErrors({});
-        router.post('/settings/profile', { name, email }, {
+        router.post('/resident/profile', { name, email }, {
             preserveScroll: true,
             onSuccess: () => {
                 setOpenSection(null);
@@ -206,7 +205,7 @@ export default function ResidentAccount({ stats }: Props) {
                             </div>
                         </AccordionRow>
                         <AccordionRow icon={KeyRound} label="Password" isOpen={openSection === 'password'} onToggle={() => toggle('password')}>
-                            <Form {...PasswordController.update.form()} options={{ preserveScroll: true }} resetOnError={['password', 'password_confirmation', 'current_password']} resetOnSuccess onSuccess={() => { setOpenSection(null); successAlert('Password updated'); }} className="space-y-3">
+                            <Form method="put" action="/resident/password" options={{ preserveScroll: true }} resetOnError={['password', 'password_confirmation', 'current_password']} resetOnSuccess onSuccess={() => { setOpenSection(null); successAlert('Password updated'); }} className="space-y-3">
                                 {({ errors, processing }) => (<>
                                     <div className="grid gap-1"><label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400"><Lock size={11} /> Current password</label><input name="current_password" type="password" autoComplete="current-password" placeholder="Current password" className={inputCls} /><InputError message={errors.current_password} /></div>
                                     <div className="grid gap-1"><label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400"><ShieldCheck size={11} /> New password</label><input name="password" type="password" autoComplete="new-password" placeholder="New password" className={inputCls} /><InputError message={errors.password} /></div>
@@ -223,7 +222,7 @@ export default function ResidentAccount({ stats }: Props) {
 
                 {auth.user.avatar && (
                     <div className="mt-3 px-4">
-                        <button onClick={() => router.delete('/settings/profile/avatar', { preserveScroll: true, onSuccess: () => { setAvatarPreview(null); successAlert('Photo removed', 'Your profile photo has been removed.'); } })} className="flex w-full items-center gap-4 rounded-2xl bg-white px-4 py-3.5 shadow-sm transition-colors hover:bg-neutral-50 active:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800/50">
+                        <button onClick={() => router.delete('/resident/profile/avatar', { preserveScroll: true, onSuccess: () => { setAvatarPreview(null); successAlert('Photo removed', 'Your profile photo has been removed.'); } })} className="flex w-full items-center gap-4 rounded-2xl bg-white px-4 py-3.5 shadow-sm transition-colors hover:bg-neutral-50 active:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800/50">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500 dark:bg-red-950/50 dark:text-red-400"><Trash2 size={18} strokeWidth={1.8} /></div>
                             <span className="flex-1 text-left text-sm font-medium text-red-600 dark:text-red-400">Remove Photo</span>
                         </button>
@@ -319,7 +318,7 @@ export default function ResidentAccount({ stats }: Props) {
                                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/50"><KeyRound size={16} className="text-emerald-600 dark:text-emerald-400" /></div>
                                     <div><h3 className="text-sm font-bold text-neutral-900 dark:text-white">Password</h3><p className="text-[11px] text-neutral-400">Update your password</p></div>
                                 </div>
-                                <Form {...PasswordController.update.form()} options={{ preserveScroll: true }} resetOnError={['password', 'password_confirmation', 'current_password']} resetOnSuccess onSuccess={() => successAlert('Password updated')} className="space-y-4 p-5">
+                                <Form method="put" action="/resident/password" options={{ preserveScroll: true }} resetOnError={['password', 'password_confirmation', 'current_password']} resetOnSuccess onSuccess={() => successAlert('Password updated')} className="space-y-4 p-5">
                                     {({ errors, processing }) => (<>
                                         <div><label className="mb-1.5 block text-xs font-semibold text-neutral-600 dark:text-neutral-400">Current password</label><input name="current_password" type="password" autoComplete="current-password" placeholder="Enter current password" className={inputCls} /><InputError message={errors.current_password} /></div>
                                         <div className="grid gap-4 sm:grid-cols-2">

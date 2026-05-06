@@ -1,7 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import { KeyRound, Lock, ShieldCheck } from 'lucide-react';
 import { useRef } from 'react';
-import PasswordController from '@/actions/App/Http/Controllers/Settings/PasswordController';
 import InputError from '@/components/input-error';
 import SettingsLayout from '@/layouts/settings/layout';
 import { successAlert } from '@/lib/notify';
@@ -27,7 +26,7 @@ export default function Password() {
             </div>
 
             <Form
-                {...PasswordController.update.form()}
+                method="put" action="/settings/password"
                 options={{ preserveScroll: true }}
                 resetOnError={['password', 'password_confirmation', 'current_password']}
                 resetOnSuccess

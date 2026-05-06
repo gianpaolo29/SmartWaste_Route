@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
 import { successAlert, errorAlert } from '@/lib/notify';
 import AdminLayout from '@/layouts/admin-layout';
-import PasswordController from '@/actions/App/Http/Controllers/Settings/PasswordController';
 import {
     Camera, Check, KeyRound, Mail, Palette,
     Pencil, ShieldCheck, Lock, Trash2, User as UserIcon,
@@ -54,7 +53,7 @@ export default function AdminAccount() {
         formData.append('avatar', file);
         formData.append('name', auth.user.name);
         formData.append('email', auth.user.email);
-        router.post('/settings/profile', formData, {
+        router.post('/admin/profile', formData, {
             forceFormData: true,
             preserveScroll: true,
             preserveState: true,
@@ -75,7 +74,7 @@ export default function AdminAccount() {
     const handleSaveProfile = () => {
         setProfileProcessing(true);
         setProfileErrors({});
-        router.post('/settings/profile', { name, email }, {
+        router.post('/admin/profile', { name, email }, {
             preserveScroll: true,
             onSuccess: () => {
                 successAlert('Profile updated', 'Your profile has been saved successfully.');
@@ -144,7 +143,7 @@ export default function AdminAccount() {
                                 <Camera size={16} className="text-emerald-600 dark:text-emerald-400" /> Change Photo
                             </button>
                             {auth.user.avatar && (
-                                <button onClick={() => router.delete('/settings/profile/avatar', { preserveScroll: true, onSuccess: () => { setAvatarPreview(null); successAlert('Photo removed', 'Your profile photo has been removed.'); } })}
+                                <button onClick={() => router.delete('/admin/profile/avatar', { preserveScroll: true, onSuccess: () => { setAvatarPreview(null); successAlert('Photo removed', 'Your profile photo has been removed.'); } })}
                                     className="flex w-full items-center gap-3 rounded-xl border border-red-200/60 bg-white px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-900/30 dark:bg-neutral-900 dark:text-red-400 dark:hover:bg-red-950/20">
                                     <Trash2 size={16} /> Remove Photo
                                 </button>
@@ -206,7 +205,8 @@ export default function AdminAccount() {
                                 </div>
                             </div>
                             <Form
-                                {...PasswordController.update.form()}
+                                method="put"
+                                action="/admin/password"
                                 options={{ preserveScroll: true }}
                                 resetOnError={['password', 'password_confirmation', 'current_password']}
                                 resetOnSuccess

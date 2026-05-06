@@ -8,7 +8,6 @@ import { useInitials } from '@/hooks/use-initials';
 import { confirm as confirmDialog, successAlert, errorAlert } from '@/lib/notify';
 import { logout } from '@/routes';
 import CollectorLayout from '@/layouts/collector-layout';
-import PasswordController from '@/actions/App/Http/Controllers/Settings/PasswordController';
 import {
     Camera, Check, ChevronDown, ChevronLeft, ClipboardList,
     KeyRound, Lock, LogOut, Mail, Palette,
@@ -88,7 +87,7 @@ export default function CollectorAccount({ stats }: Props) {
         formData.append('avatar', file);
         formData.append('name', auth.user.name);
         formData.append('email', auth.user.email);
-        router.post('/settings/profile', formData, {
+        router.post('/collector/profile', formData, {
             forceFormData: true,
             preserveScroll: true,
             preserveState: true,
@@ -107,7 +106,7 @@ export default function CollectorAccount({ stats }: Props) {
     const handleSaveProfile = () => {
         setProfileProcessing(true);
         setProfileErrors({});
-        router.post('/settings/profile', { name, email }, {
+        router.post('/collector/profile', { name, email }, {
             preserveScroll: true,
             onSuccess: () => {
                 setOpenSection(null);
@@ -173,7 +172,7 @@ export default function CollectorAccount({ stats }: Props) {
             {/* Remove avatar + logout (desktop only, shown below stats) */}
             <div className="mt-5 hidden w-full space-y-2 lg:block">
                 {auth.user.avatar && (
-                    <button onClick={() => router.delete('/settings/profile/avatar', { preserveScroll: true, onSuccess: () => { setAvatarPreview(null); successAlert('Photo removed', 'Your profile photo has been removed.'); } })}
+                    <button onClick={() => router.delete('/collector/profile/avatar', { preserveScroll: true, onSuccess: () => { setAvatarPreview(null); successAlert('Photo removed', 'Your profile photo has been removed.'); } })}
                         className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-500 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800/50">
                         <Trash2 size={16} /> Remove Photo
                     </button>
@@ -210,7 +209,8 @@ export default function CollectorAccount({ stats }: Props) {
 
             <AccordionRow icon={KeyRound} label="Password" isOpen={openSection === 'password'} onToggle={() => toggle('password')}>
                 <Form
-                    {...PasswordController.update.form()}
+                    method="put"
+                    action="/collector/password"
                     options={{ preserveScroll: true }}
                     resetOnError={['password', 'password_confirmation', 'current_password']}
                     resetOnSuccess
@@ -315,7 +315,7 @@ export default function CollectorAccount({ stats }: Props) {
                 {/* Remove Avatar */}
                 {auth.user.avatar && (
                     <div className="mt-3 px-4">
-                        <button onClick={() => router.delete('/settings/profile/avatar', { preserveScroll: true, onSuccess: () => { setAvatarPreview(null); successAlert('Photo removed', 'Your profile photo has been removed.'); } })}
+                        <button onClick={() => router.delete('/collector/profile/avatar', { preserveScroll: true, onSuccess: () => { setAvatarPreview(null); successAlert('Photo removed', 'Your profile photo has been removed.'); } })}
                             className="flex w-full items-center gap-4 rounded-2xl bg-white px-4 py-3.5 shadow-sm transition-colors hover:bg-neutral-50 active:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800/50">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500 dark:bg-red-950/50 dark:text-red-400"><Trash2 size={18} strokeWidth={1.8} /></div>
                             <span className="flex-1 text-left text-sm font-medium text-red-600 dark:text-red-400">Remove Photo</span>

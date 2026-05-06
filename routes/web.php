@@ -33,6 +33,9 @@ Route::middleware(['auth'])->get('/dashboard', function () {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminListController::class, 'dashboard'])->name('dashboard');
     Route::get('/account', fn () => \Inertia\Inertia::render('admin/account'))->name('account');
+    Route::post('/profile', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::delete('/profile/avatar', [\App\Http\Controllers\Admin\AdminProfileController::class, 'removeAvatar'])->name('profile.avatar.remove');
+    Route::put('/password', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('password.update');
     Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [\App\Http\Controllers\Admin\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
@@ -75,6 +78,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 Route::middleware(['auth', 'role:collector'])->prefix('collector')->name('collector.')->group(function () {
     Route::get('/dashboard', \App\Http\Controllers\Collector\CollectorDashboardController::class)->name('dashboard');
     Route::get('/account', [\App\Http\Controllers\Collector\CollectorAccountController::class, 'index'])->name('account');
+    Route::post('/profile', [\App\Http\Controllers\Collector\CollectorProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::delete('/profile/avatar', [\App\Http\Controllers\Collector\CollectorProfileController::class, 'removeAvatar'])->name('profile.avatar.remove');
+    Route::put('/password', [\App\Http\Controllers\Collector\CollectorProfileController::class, 'updatePassword'])->name('password.update');
 
     Route::get('/routes', [\App\Http\Controllers\Collector\CollectorRouteController::class, 'index'])->name('routes.index');
     Route::get('/routes/{route}', [\App\Http\Controllers\Collector\RouteTrackingController::class, 'show'])->name('routes.show');
@@ -97,6 +103,9 @@ Route::middleware(['auth', 'role:admin'])->get('/admin/routes/{route}/location',
 Route::middleware(['auth', 'role:resident'])->prefix('resident')->name('resident.')->group(function () {
     Route::get('/dashboard', \App\Http\Controllers\Resident\ResidentDashboardController::class)->name('dashboard');
     Route::get('/account', [\App\Http\Controllers\Resident\ResidentAccountController::class, 'index'])->name('account');
+    Route::post('/profile', [\App\Http\Controllers\Resident\ResidentProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::delete('/profile/avatar', [\App\Http\Controllers\Resident\ResidentProfileController::class, 'removeAvatar'])->name('profile.avatar.remove');
+    Route::put('/password', [\App\Http\Controllers\Resident\ResidentProfileController::class, 'updatePassword'])->name('password.update');
     Route::get('/location/setup', [\App\Http\Controllers\Resident\LocationController::class, 'create'])->name('location.create');
     Route::post('/location/setup', [\App\Http\Controllers\Resident\LocationController::class, 'store'])->name('location.store');
     Route::get('/location/detect-zone', [\App\Http\Controllers\Resident\LocationController::class, 'detectZone'])->name('location.detect-zone');

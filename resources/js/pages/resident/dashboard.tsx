@@ -144,7 +144,7 @@ export default function ResidentDashboard({ mapsApiKey, household, upcoming, rep
                             className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-700 transition-all hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50">
                             <AlertTriangle size={14} /> Report Missed Pickup
                         </Link>
-                        <Link href="/settings/profile"
+                        <Link href="/resident/account"
                             className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-500 transition-all hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700">
                             <Settings size={16} />
                         </Link>
