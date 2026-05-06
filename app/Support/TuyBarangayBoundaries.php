@@ -8,9 +8,11 @@ use Illuminate\Support\Facades\Log;
 class TuyBarangayBoundaries
 {
     /**
-     * Approximate centroids for the 23 barangays of Tuy, Batangas.
+     * Approximate centroids for barangays covered by SmartWaste Route.
+     * Tuy, Batangas (23 barangays) + Bucana, Nasugbu.
      */
     public const CENTROIDS = [
+        // Tuy, Batangas
         'Acle'            => [13.9740, 120.7000],
         'Bayudbud'        => [13.9920, 120.6960],
         'Bolbok'          => [14.0150, 120.7180],
@@ -34,6 +36,8 @@ class TuyBarangayBoundaries
         'Talon'           => [14.0110, 120.7250],
         'Toong'           => [13.9650, 120.7250],
         'Tuyon-Tuyon'     => [13.9580, 120.7090],
+        // Nasugbu, Batangas
+        'Bucana'          => [14.0694, 120.6278],
     ];
 
     /**
@@ -105,6 +109,13 @@ class TuyBarangayBoundaries
         ];
     }
 
+    /** Map barangay name to its municipality */
+    private static function municipalityFor(string $name): string
+    {
+        $nasugbu = ['Bucana'];
+        return in_array($name, $nasugbu, true) ? 'Nasugbu, Batangas' : 'Tuy, Batangas';
+    }
+
     /**
      * Fetch real boundary polygon from Nominatim (OpenStreetMap).
      */
@@ -114,7 +125,7 @@ class TuyBarangayBoundaries
             $response = Http::timeout(10)
                 ->withHeaders(['User-Agent' => 'SmartWasteRoute/1.0'])
                 ->get('https://nominatim.openstreetmap.org/search', [
-                    'q' => "Barangay {$name}, Tuy, Batangas, Philippines",
+                    'q' => "Barangay {$name}, " . self::municipalityFor($name) . ", Philippines",
                     'format' => 'json',
                     'polygon_geojson' => 1,
                     'limit' => 1,
