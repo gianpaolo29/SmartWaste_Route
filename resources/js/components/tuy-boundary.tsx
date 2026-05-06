@@ -35,11 +35,12 @@ export function TuyBoundary() {
         const polygon = new google.maps.Polygon({
             paths: data.paths,
             strokeColor: '#059669',
-            strokeOpacity: 0.6,
-            strokeWeight: 2.5,
+            strokeOpacity: 0.8,
+            strokeWeight: 3,
             fillColor: '#059669',
-            fillOpacity: 0.04,
+            fillOpacity: 0.03,
             clickable: false,
+            zIndex: 0,
             map,
         });
 

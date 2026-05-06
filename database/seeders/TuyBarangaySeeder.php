@@ -2,42 +2,19 @@
 
 namespace Database\Seeders;
 
+use App\Support\TuyBarangayBoundaries;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class TuyBarangaySeeder extends Seeder
 {
     /**
-     * Seed all 23 barangays of Tuy, Batangas.
+     * Seed all 23 barangays of Tuy, Batangas from the CENTROIDS source of truth.
      * Each barangay gets exactly one zone linked via pivot.
      */
     public function run(): void
     {
-        $barangays = [
-            'Acle',
-            'Bayudbud',
-            'Bolboc',
-            'Burol',
-            'Dao',
-            'Dalima',
-            'Guinhawa',
-            'Luna',
-            'Luntal',
-            'Magahis',
-            'Malibu',
-            'Mataywanac',
-            'Palincaro',
-            'Putol',
-            'Rillo',
-            'Sabang',
-            'Talon',
-            'Tuyon-tuyon',
-            'Poblacion 1',
-            'Poblacion 2',
-            'Poblacion 3',
-            'Poblacion 4',
-            'Toong',
-        ];
+        $barangays = array_keys(TuyBarangayBoundaries::CENTROIDS);
 
         DB::transaction(function () use ($barangays) {
             foreach ($barangays as $name) {
@@ -52,13 +29,13 @@ class TuyBarangaySeeder extends Seeder
 
                 $zone = DB::table('zones')->where('name', $zoneName)->first();
 
-                if (! $zone) {
+                if (!$zone) {
                     $zoneId = DB::table('zones')->insertGetId([
-                        'name'        => $zoneName,
+                        'name' => $zoneName,
                         'description' => "Default collection zone for Barangay {$name}, Tuy, Batangas.",
-                        'active'      => true,
-                        'created_at'  => now(),
-                        'updated_at'  => now(),
+                        'active' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
                 } else {
                     $zoneId = $zone->id;

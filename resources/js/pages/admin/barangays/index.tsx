@@ -25,26 +25,22 @@ const fade = (delay = 0) => ({
     transition: { duration: 0.35, delay },
 });
 
-function BarangayPolygons({ items, selected, onSelect }: { items: Item[]; selected: number | null; onSelect: (id: number | null) => void }) {
+function BarangayPolygons({ items, selected, onSelect, boundaries }: { items: Item[]; selected: number | null; onSelect: (id: number | null) => void; boundaries: Record<number, Boundary> }) {
     const map = useMap();
 
     useEffect(() => {
         if (!map) return;
         const overlays: (google.maps.Polyline | google.maps.Polygon)[] = [];
         const labels: google.maps.marker.AdvancedMarkerElement[] = [];
-        let cancelled = false;
 
-        (async () => {
-            const results = await Promise.all(
-                items.map(async (item, idx) => {
-                    try {
-                        const res = await fetch(`/admin/barangays/${item.id}/boundary`, { headers: { Accept: 'application/json' } });
-                        const data: Boundary = await res.json();
-                        return { item, data, color: COLORS[idx % COLORS.length] };
-                    } catch { return null; }
-                }),
-            );
-            if (cancelled) return;
+        // Use pre-loaded boundaries — no network requests needed
+        const results = items.map((item, idx) => {
+            const data = (boundaries as Record<string, Boundary>)[item.id];
+            if (!data) return null;
+            return { item, data, color: COLORS[idx % COLORS.length] };
+        });
+
+        {
 
             for (const r of results) {
                 if (!r || !r.data.paths?.length || !r.data.center) continue;
@@ -170,15 +166,34 @@ function BarangayPolygons({ items, selected, onSelect }: { items: Item[]; select
                     labels.push(new google.maps.marker.AdvancedMarkerElement({ map, position: r.data.center, content: el }));
                 }
             }
-        })();
+        }
 
-        return () => { cancelled = true; overlays.forEach((o) => o.setMap(null)); labels.forEach((m) => (m.map = null)); };
-    }, [map, items, selected, onSelect]);
+        return () => { overlays.forEach((o) => o.setMap(null)); labels.forEach((m) => (m.map = null)); };
+    }, [map, items, selected, onSelect, boundaries]);
 
     return null;
 }
 
-export default function BarangaysIndex({ items, stats, mapsApiKey }: { items: Item[]; stats: Stats; mapsApiKey: string }) {
+function MapFocuser({ selectedId, boundaries }: { selectedId: number | null; boundaries: Record<number, Boundary> }) {
+    const map = useMap();
+
+    useEffect(() => {
+        if (!map || !selectedId) return;
+        const b = (boundaries as Record<string, Boundary>)[selectedId];
+        if (!b?.paths?.[0]?.length) {
+            // Fallback to center if no path
+            if (b?.center) map.panTo(b.center);
+            return;
+        }
+        const bounds = new google.maps.LatLngBounds();
+        b.paths[0].forEach((p) => bounds.extend(p));
+        map.fitBounds(bounds, { top: 60, right: 60, bottom: 60, left: 60 });
+    }, [map, selectedId, boundaries]);
+
+    return null;
+}
+
+export default function BarangaysIndex({ items, stats, mapsApiKey, boundaries }: { items: Item[]; stats: Stats; mapsApiKey: string; boundaries: Record<number, Boundary> }) {
     const [search, setSearch] = useState('');
     const [selected, setSelected] = useState<number | null>(null);
     const [page, setPage] = useState(1);
@@ -262,7 +277,8 @@ export default function BarangaysIndex({ items, stats, mapsApiKey }: { items: It
                                 <APIProvider apiKey={mapsApiKey}>
                                     <Map mapId="smartwaste-route-map" defaultCenter={{ lat: 13.998, lng: 120.7297 }} defaultZoom={13} gestureHandling="greedy" disableDefaultUI={false} style={{ width: '100%', height: '100%' }}>
                                         <TuyBoundary />
-                                        <BarangayPolygons items={items} selected={selected} onSelect={setSelected} />
+                                        <BarangayPolygons items={items} selected={selected} onSelect={setSelected} boundaries={boundaries} />
+                                        <MapFocuser selectedId={selected} boundaries={boundaries} />
                                     </Map>
                                 </APIProvider>
 

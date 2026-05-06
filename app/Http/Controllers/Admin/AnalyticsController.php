@@ -111,9 +111,44 @@ class AnalyticsController extends Controller
             'intensity' => round(($zoneWaste[$z->id] ?? 0) / $maxWaste, 2),
         ]);
 
+        // Waste breakdown per zone for detail panel
+        $zoneBreakdowns = CollectionReport::query()
+            ->join('route_plans', 'collection_reports.route_plan_id', '=', 'route_plans.id')
+            ->selectRaw('route_plans.zone_id, SUM(mixed_waste) as mixed, SUM(biodegradable) as bio, SUM(recyclable) as recyclable, SUM(residual) as residual, SUM(solid_waste) as solid')
+            ->groupBy('route_plans.zone_id')
+            ->get()
+            ->keyBy('zone_id');
+
+        $zoneData = $zoneData->map(function ($z) use ($zoneBreakdowns) {
+            $bd = $zoneBreakdowns[$z['id']] ?? null;
+            $z['breakdown'] = $bd ? [
+                ['name' => 'Mixed', 'value' => round($bd->mixed, 1), 'color' => '#f59e0b'],
+                ['name' => 'Biodegradable', 'value' => round($bd->bio, 1), 'color' => '#10b981'],
+                ['name' => 'Recyclable', 'value' => round($bd->recyclable, 1), 'color' => '#3b82f6'],
+                ['name' => 'Residual', 'value' => round($bd->residual, 1), 'color' => '#6b7280'],
+                ['name' => 'Solid', 'value' => round($bd->solid, 1), 'color' => '#ef4444'],
+            ] : [];
+            return $z;
+        });
+
+        // Collection point heatmap data — household locations with their waste history
+        $heatmapPoints = \App\Models\RouteStop::query()
+            ->join('collections', 'route_stops.id', '=', 'collections.route_stop_id')
+            ->where('collections.status', 'collected')
+            ->whereNotNull('route_stops.lat')
+            ->selectRaw('route_stops.lat, route_stops.lng, COUNT(*) as collections_count')
+            ->groupBy('route_stops.lat', 'route_stops.lng')
+            ->get()
+            ->map(fn ($p) => [
+                'lat' => (float) $p->lat,
+                'lng' => (float) $p->lng,
+                'weight' => $p->collections_count,
+            ]);
+
         return Inertia::render('admin/analytics/zone-heatmap', [
             'zones' => $zoneData,
             'missedMarkers' => $missedMarkers,
+            'heatmapPoints' => $heatmapPoints,
             'mapsApiKey' => config('services.google.maps_api_key'),
         ]);
     }

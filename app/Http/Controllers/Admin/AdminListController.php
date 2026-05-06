@@ -152,6 +152,23 @@ class AdminListController extends Controller
 
     public function barangays()
     {
+        // Auto-sync: ensure all 23 Tuy barangays exist in the database
+        $centroids = \App\Support\TuyBarangayBoundaries::CENTROIDS;
+        $existing = Barangay::pluck('name')->map(fn ($n) => strtolower($n))->toArray();
+
+        foreach ($centroids as $name => $coords) {
+            if (!in_array(strtolower($name), $existing, true)) {
+                $brg = Barangay::create(['name' => $name]);
+
+                // Also create a default zone and link it
+                $zone = Zone::firstOrCreate(
+                    ['name' => 'Zone ' . $name],
+                    ['description' => "Default collection zone for Barangay {$name}, Tuy, Batangas.", 'active' => true],
+                );
+                $brg->zones()->syncWithoutDetaching([$zone->id]);
+            }
+        }
+
         $items = Barangay::withCount(['zones', 'households'])
             ->orderBy('name')
             ->get()
@@ -169,10 +186,35 @@ class AdminListController extends Controller
             'active_zones' => Zone::where('active', true)->count(),
         ];
 
+        // Pre-load all boundaries so the frontend doesn't need N individual fetches
+        $boundaries = [];
+        foreach (Barangay::orderBy('name')->get() as $b) {
+            $boundary = \App\Support\TuyBarangayBoundaries::forName($b->name);
+
+            // If no match found, try to generate a hexagon from the barangay's households
+            if (!$boundary) {
+                $hh = \App\Models\Household::where('barangay_id', $b->id)
+                    ->whereNotNull('lat')->whereNotNull('lng')
+                    ->selectRaw('AVG(lat) as avg_lat, AVG(lng) as avg_lng')
+                    ->first();
+
+                if ($hh && $hh->avg_lat && $hh->avg_lng) {
+                    $boundary = [
+                        'paths' => [\App\Support\TuyBarangayBoundaries::hexagon((float) $hh->avg_lat, (float) $hh->avg_lng)],
+                        'center' => ['lat' => (float) $hh->avg_lat, 'lng' => (float) $hh->avg_lng],
+                        'radius_m' => 500,
+                    ];
+                }
+            }
+
+            $boundaries[$b->id] = $boundary ?? ['paths' => [], 'center' => null];
+        }
+
         return Inertia::render('admin/barangays/index', [
             'items' => $items,
             'stats' => $stats,
             'mapsApiKey' => config('services.google.maps_api_key'),
+            'boundaries' => $boundaries,
         ]);
     }
 
@@ -202,10 +244,18 @@ class AdminListController extends Controller
 
         $barangays = Barangay::orderBy('name')->get(['id', 'name']);
 
+        // Pre-load all boundaries
+        $boundaries = [];
+        foreach ($barangays as $b) {
+            $boundary = \App\Support\TuyBarangayBoundaries::forName($b->name);
+            $boundaries[$b->id] = $boundary ?? ['paths' => [], 'center' => null];
+        }
+
         return Inertia::render('admin/zones/index', [
             'items' => $items,
             'barangays' => $barangays,
             'mapsApiKey' => config('services.google.maps_api_key'),
+            'boundaries' => $boundaries,
         ]);
     }
 
@@ -225,6 +275,10 @@ class AdminListController extends Controller
         ]);
 
         $zone->barangays()->sync($data['barangay_ids']);
+
+        // Assign households in these barangays to this zone
+        Household::whereIn('barangay_id', $data['barangay_ids'])
+            ->update(['zone_id' => $zone->id]);
 
         return back();
     }
@@ -246,6 +300,10 @@ class AdminListController extends Controller
         ]);
 
         $zone->barangays()->sync($data['barangay_ids']);
+
+        // Reassign households in these barangays to this zone
+        Household::whereIn('barangay_id', $data['barangay_ids'])
+            ->update(['zone_id' => $zone->id]);
 
         return back();
     }

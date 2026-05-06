@@ -37,7 +37,7 @@ const operationsNav = [
 
 const analyticsNav = [
     { title: 'Waste Trends', href: '/admin/analytics/waste-trends', icon: TrendingUp },
-    { title: 'Zone Heatmap', href: '/admin/analytics/zone-heatmap', icon: Map },
+    { title: 'Waste Heatmap', href: '/admin/analytics/zone-heatmap', icon: Map },
     { title: 'Live Fleet', href: '/admin/analytics/fleet', icon: Radio },
     { title: 'Audit Log', href: '/admin/audit-logs', icon: ScrollText },
 ];

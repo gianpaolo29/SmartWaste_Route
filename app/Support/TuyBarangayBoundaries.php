@@ -41,14 +41,29 @@ class TuyBarangayBoundaries
      */
     public static function forName(string $name): ?array
     {
-        // Find centroid
+        // Find centroid — try exact match first, then contains match
         $centroid = null;
         $matchedKey = null;
+        $nameLower = strtolower(trim($name));
+
+        // Exact match (case-insensitive)
         foreach (self::CENTROIDS as $key => $coords) {
-            if (strcasecmp($key, $name) === 0) {
+            if (strtolower($key) === $nameLower) {
                 $centroid = $coords;
                 $matchedKey = $key;
                 break;
+            }
+        }
+
+        // Fuzzy match: DB name contains centroid key or vice versa
+        if (!$centroid) {
+            foreach (self::CENTROIDS as $key => $coords) {
+                $keyLower = strtolower($key);
+                if (str_contains($nameLower, $keyLower) || str_contains($keyLower, $nameLower)) {
+                    $centroid = $coords;
+                    $matchedKey = $key;
+                    break;
+                }
             }
         }
 
