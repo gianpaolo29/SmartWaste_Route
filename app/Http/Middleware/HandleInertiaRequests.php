@@ -42,7 +42,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user() ? array_merge(
                     $request->user()->toArray(),
-                    ['avatar' => $request->user()->avatar ? Storage::disk('public')->url($request->user()->avatar) : null]
+                    ['avatar' => $request->user()->avatar
+                        ? (str_starts_with($request->user()->avatar, 'http') ? $request->user()->avatar : Storage::disk('public')->url($request->user()->avatar))
+                        : null]
                 ) : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
