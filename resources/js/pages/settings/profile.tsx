@@ -1,12 +1,12 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Camera, Mail, Trash2, User as UserIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { Camera, Trash2, User as UserIcon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
 import SettingsLayout from '@/layouts/settings/layout';
 import { send } from '@/routes/verification';
-import { toast } from '@/lib/notify';
+import { successAlert, errorAlert } from '@/lib/notify';
 
 const inputClass = 'w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3.5 py-2.5 text-sm text-neutral-900 outline-none transition-all focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-white dark:focus:border-emerald-600';
 
@@ -14,34 +14,51 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     const { auth } = usePage().props;
     const getInitials = useInitials();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const avatarFileRef = useRef<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [name, setName] = useState(auth.user.name);
+    const [email, setEmail] = useState(auth.user.email);
+
+    // Sync local state when auth props change (after Inertia page refresh)
+    useEffect(() => {
+        setName(auth.user.name);
+        setEmail(auth.user.email);
+    }, [auth.user.name, auth.user.email]);
 
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        avatarFileRef.current = file;
         const reader = new FileReader();
         reader.onload = (ev) => setAvatarPreview(ev.target?.result as string);
         reader.readAsDataURL(file);
+        if (e.target) e.target.value = '';
     };
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setProcessing(true);
         setErrors({});
-        const formData = new FormData(e.currentTarget);
-        const avatarFile = fileInputRef.current?.files?.[0];
-        if (avatarFile) formData.append('avatar', avatarFile);
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('email', email);
+        if (avatarFileRef.current) formData.append('avatar', avatarFileRef.current);
 
         router.post('/settings/profile', formData, {
             preserveScroll: true,
             forceFormData: true,
             onSuccess: () => {
                 setAvatarPreview(null);
-                toast('success', 'Profile updated successfully');
+                avatarFileRef.current = null;
+                successAlert('Profile updated', 'Your changes have been saved successfully.');
             },
-            onError: (errs) => setErrors(errs),
+            onError: (errs) => {
+                setErrors(errs);
+                const msg = Object.values(errs).join('\n');
+                errorAlert('Update failed', msg || 'Please check the form for errors.');
+            },
             onFinish: () => setProcessing(false),
         });
     };
@@ -86,7 +103,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                             Change photo
                         </button>
                         {(auth.user.avatar || avatarPreview) && (
-                            <button type="button" onClick={() => router.delete('/settings/profile/avatar', { preserveScroll: true, onSuccess: () => setAvatarPreview(null) })}
+                            <button type="button" onClick={() => router.delete('/settings/profile/avatar', { preserveScroll: true, onSuccess: () => { setAvatarPreview(null); successAlert('Photo removed', 'Your profile photo has been removed.'); } })}
                                 className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30">
                                 <Trash2 size={12} className="mr-1 inline" /> Remove
                             </button>
@@ -101,12 +118,12 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 <div>
                     <label className="mb-1.5 block text-xs font-semibold text-neutral-600 dark:text-neutral-400">Name</label>
-                    <input name="name" defaultValue={auth.user.name} required autoComplete="name" placeholder="Full name" className={inputClass} />
+                    <input value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" placeholder="Full name" className={inputClass} />
                     <InputError message={errors.name} />
                 </div>
                 <div>
                     <label className="mb-1.5 block text-xs font-semibold text-neutral-600 dark:text-neutral-400">Email</label>
-                    <input name="email" type="email" defaultValue={auth.user.email} required autoComplete="username" placeholder="Email address" className={inputClass} />
+                    <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required autoComplete="username" placeholder="Email address" className={inputClass} />
                     <InputError message={errors.email} />
                 </div>
 

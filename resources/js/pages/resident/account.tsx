@@ -7,7 +7,7 @@ import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useInitials } from '@/hooks/use-initials';
-import { confirm as confirmDialog, successAlert } from '@/lib/notify';
+import { confirm as confirmDialog, successAlert, errorAlert } from '@/lib/notify';
 import { logout } from '@/routes';
 import PasswordController from '@/actions/App/Http/Controllers/Settings/PasswordController';
 import {
@@ -15,7 +15,7 @@ import {
     KeyRound, Lock, LogOut, Mail, MapPin, Palette,
     Pencil, ShieldCheck, Trash2, User as UserIcon, X,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { User } from '@/types';
 
 type Props = {
@@ -67,6 +67,12 @@ export default function ResidentAccount({ stats }: Props) {
     const [name, setName] = useState(auth.user.name);
     const [email, setEmail] = useState(auth.user.email);
 
+    // Sync local state when auth props change (after Inertia page refresh)
+    useEffect(() => {
+        setName(auth.user.name);
+        setEmail(auth.user.email);
+    }, [auth.user.name, auth.user.email]);
+
     const displayAvatar = avatarPreview || auth.user.avatar;
 
     const toggle = (section: string) => {
@@ -89,7 +95,20 @@ export default function ResidentAccount({ stats }: Props) {
         formData.append('avatar', file);
         formData.append('name', auth.user.name);
         formData.append('email', auth.user.email);
-        router.post('/settings/profile', formData, { forceFormData: true, preserveScroll: true, onSuccess: () => setAvatarPreview(null) });
+        router.post('/settings/profile', formData, {
+            forceFormData: true,
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                setAvatarPreview(null);
+                successAlert('Photo updated', 'Your profile photo has been changed successfully.');
+            },
+            onError: () => {
+                setAvatarPreview(null);
+                errorAlert('Upload failed', 'Please try again with a valid image (JPG, PNG, WebP, max 2MB).');
+            },
+        });
+        if (e.target) e.target.value = '';
     };
 
     const handleSaveProfile = () => {
@@ -97,8 +116,15 @@ export default function ResidentAccount({ stats }: Props) {
         setProfileErrors({});
         router.post('/settings/profile', { name, email }, {
             preserveScroll: true,
-            onSuccess: () => { setOpenSection(null); successAlert('Profile updated'); },
-            onError: (errs) => setProfileErrors(errs),
+            onSuccess: () => {
+                setOpenSection(null);
+                successAlert('Profile updated', 'Your profile has been saved successfully.');
+            },
+            onError: (errs) => {
+                setProfileErrors(errs);
+                const msg = Object.values(errs).join('\n');
+                errorAlert('Update failed', msg || 'Please check the form for errors.');
+            },
             onFinish: () => setProfileProcessing(false),
         });
     };
@@ -197,7 +223,7 @@ export default function ResidentAccount({ stats }: Props) {
 
                 {auth.user.avatar && (
                     <div className="mt-3 px-4">
-                        <button onClick={() => router.delete('/settings/profile/avatar', { preserveScroll: true, onSuccess: () => setAvatarPreview(null) })} className="flex w-full items-center gap-4 rounded-2xl bg-white px-4 py-3.5 shadow-sm transition-colors hover:bg-neutral-50 active:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800/50">
+                        <button onClick={() => router.delete('/settings/profile/avatar', { preserveScroll: true, onSuccess: () => { setAvatarPreview(null); successAlert('Photo removed', 'Your profile photo has been removed.'); } })} className="flex w-full items-center gap-4 rounded-2xl bg-white px-4 py-3.5 shadow-sm transition-colors hover:bg-neutral-50 active:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800/50">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500 dark:bg-red-950/50 dark:text-red-400"><Trash2 size={18} strokeWidth={1.8} /></div>
                             <span className="flex-1 text-left text-sm font-medium text-red-600 dark:text-red-400">Remove Photo</span>
                         </button>

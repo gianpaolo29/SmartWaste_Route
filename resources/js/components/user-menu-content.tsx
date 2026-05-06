@@ -40,7 +40,7 @@ export function UserMenuContent({ user }: Props) {
                 <DropdownMenuItem asChild>
                     <Link
                         className="block w-full cursor-pointer"
-                        href="/resident/account"
+                        href={user.role === 'admin' ? '/admin/account' : user.role === 'collector' ? '/collector/account' : '/resident/account'}
                         prefetch
                         onClick={cleanup}
                     >

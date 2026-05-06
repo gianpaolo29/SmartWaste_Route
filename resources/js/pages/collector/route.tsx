@@ -774,7 +774,7 @@ export default function CollectorRoute({
                 <div className="flex flex-1 flex-col lg:flex-row lg:h-[calc(100vh-57px)]">
 
                 {/* ===== Map ===== */}
-                <div className="relative h-[45vh] w-full shrink-0 lg:h-auto lg:flex-1 lg:order-2">
+                <div className="relative h-[55vh] w-full shrink-0 lg:h-auto lg:flex-1 lg:order-2">
                     <APIProvider apiKey={mapsApiKey}>
                         <Map
                             mapId="smartwaste-route-map"
@@ -821,16 +821,45 @@ export default function CollectorRoute({
                                 );
                             })}
 
-                            {/* Truck marker */}
+                            {/* Navigation arrow marker (Google Maps style) */}
                             {me && (
                                 <AdvancedMarker position={me} zIndex={9999}>
-                                    <div className="relative flex h-14 w-14 items-center justify-center">
-                                        <span className="absolute h-14 w-14 animate-ping rounded-full bg-blue-500/15" style={{ animationDuration: '2s' }} />
+                                    <div className="relative flex items-center justify-center" style={{ width: 64, height: 64 }}>
+                                        {/* Outer glow pulse */}
+                                        <span className="absolute h-16 w-16 rounded-full bg-blue-500/10" style={{ animationDuration: '2.5s' }} />
+                                        {/* Accuracy circle */}
+                                        <span className="absolute h-14 w-14 rounded-full border-2 border-blue-400/20 bg-blue-400/5" />
+                                        {/* Blue navigation arrow */}
                                         <div
-                                            className="relative flex h-10 w-10 items-center justify-center rounded-full border-[3px] border-white bg-gradient-to-br from-blue-500 to-blue-700 shadow-xl shadow-blue-600/30"
+                                            className="relative z-10"
                                             style={{ transform: `rotate(${heading}rad)` }}
                                         >
-                                            <Truck size={16} className="text-white" style={{ transform: `rotate(${-heading}rad)` }} />
+                                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                                <defs>
+                                                    <filter id="nav-shadow" x="-4" y="-2" width="56" height="56">
+                                                        <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#1d4ed8" floodOpacity="0.4"/>
+                                                    </filter>
+                                                    <linearGradient id="nav-grad" x1="24" y1="4" x2="24" y2="40" gradientUnits="userSpaceOnUse">
+                                                        <stop stopColor="#3b82f6"/>
+                                                        <stop offset="1" stopColor="#1d4ed8"/>
+                                                    </linearGradient>
+                                                </defs>
+                                                {/* Arrow shape */}
+                                                <path
+                                                    d="M24 4 L38 38 L24 30 L10 38 Z"
+                                                    fill="url(#nav-grad)"
+                                                    stroke="white"
+                                                    strokeWidth="3"
+                                                    strokeLinejoin="round"
+                                                    filter="url(#nav-shadow)"
+                                                />
+                                                {/* Inner highlight */}
+                                                <path
+                                                    d="M24 10 L34 34 L24 28 L14 34 Z"
+                                                    fill="white"
+                                                    opacity="0.15"
+                                                />
+                                            </svg>
                                         </div>
                                     </div>
                                 </AdvancedMarker>
@@ -853,42 +882,94 @@ export default function CollectorRoute({
                         </Map>
                     </APIProvider>
 
-                    {/* Navigation overlay */}
+                    {/* ── Turn direction card (top-left, Google Maps style) ── */}
                     <AnimatePresence>
-                        {status === 'in_progress' && navInfo && (
+                        {status === 'in_progress' && me && navSteps.length > 0 && (() => {
+                            // Find the closest upcoming step
+                            let closestStep = navSteps[0];
+                            let closestDist = Infinity;
+                            for (const step of navSteps) {
+                                const d = haversine(me, { lat: step.startLat, lng: step.startLng });
+                                if (d < closestDist) { closestDist = d; closestStep = step; }
+                            }
+                            const maneuver = closestStep?.maneuver ?? '';
+                            const getManeuverIcon = (m: string) => {
+                                if (m.includes('left')) return '↰';
+                                if (m.includes('right')) return '↱';
+                                if (m.includes('uturn')) return '↩';
+                                if (m.includes('roundabout')) return '↻';
+                                if (m.includes('merge')) return '⤵';
+                                return '↑';
+                            };
+                            return (
+                                <motion.div
+                                    key="turn-card"
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="absolute left-3 top-3 z-10 lg:left-5 lg:top-5"
+                                >
+                                    <div className="overflow-hidden rounded-2xl bg-[#1a73e8] text-white shadow-xl shadow-blue-700/30" style={{ minWidth: 140 }}>
+                                        <div className="flex items-center gap-3 px-4 py-3">
+                                            <span className="text-3xl font-light leading-none">{getManeuverIcon(maneuver)}</span>
+                                            <div>
+                                                <p className="text-2xl font-bold leading-none tracking-tight">{closestStep?.distanceText ?? ''}</p>
+                                            </div>
+                                        </div>
+                                        {closestStep?.instruction && (
+                                            <div className="border-t border-white/15 bg-white/10 px-4 py-2">
+                                                <p className="text-xs font-medium leading-tight opacity-90">{closestStep.instruction}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            );
+                        })()}
+                    </AnimatePresence>
+
+                    {/* ── ETA / distance bar (bottom, Google Maps style) ── */}
+                    <AnimatePresence>
+                        {status === 'in_progress' && me && navInfo && (
                             <motion.div
+                                key="eta-bar"
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 10 }}
-                                className="absolute bottom-3 left-3 right-3 z-10 lg:bottom-6 lg:left-6 lg:right-auto lg:min-w-[320px]"
+                                className="absolute bottom-3 left-3 right-3 z-10 lg:bottom-5 lg:left-5 lg:right-5"
                             >
-                                <div className="flex items-center gap-3 rounded-2xl border border-white/50 bg-white/95 px-4 py-3 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-neutral-900/95">
-                                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-md shadow-blue-500/20">
-                                        <Navigation size={18} className="text-white" style={{ transform: `rotate(${navInfo.bearing}deg)` }} />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex items-baseline gap-2">
-                                            <p className="text-lg font-bold tracking-tight">{roadInfo ? formatDistance(roadInfo.distance) : formatDistance(navInfo.distance)}</p>
-                                            {roadInfo && <span className="text-xs font-medium text-neutral-400">{roadInfo.summary}</span>}
+                                <div className="flex items-center justify-between rounded-2xl bg-white/95 px-4 py-3 shadow-xl backdrop-blur-xl dark:bg-neutral-900/95">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1a73e8]">
+                                            <Navigation size={18} className="text-white" style={{ transform: `rotate(${navInfo.bearing}deg)` }} />
                                         </div>
-                                        <p className="truncate text-xs text-neutral-500">
-                                            Head {navInfo.compass} to Stop #{navInfo.stop.stop_no}
-                                        </p>
+                                        <div>
+                                            <p className="text-base font-bold text-neutral-900 dark:text-white">
+                                                {roadInfo?.summary ?? '—'} <span className="font-normal text-neutral-400">·</span> <span className="text-neutral-500 dark:text-neutral-400">{roadInfo ? formatDistance(roadInfo.distance) : formatDistance(navInfo.distance)}</span>
+                                            </p>
+                                            <p className="text-xs text-neutral-400">
+                                                Stop #{navInfo.stop.stop_no} · {remainingStops} stops left
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                                            {collectedCount}/{stops.length}
+                                        </span>
                                     </div>
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                    {/* Live indicator */}
+                    {/* ── Live tracking badge (top-right) ── */}
                     {status === 'in_progress' && me && (
-                        <div className="absolute left-3 top-3 z-10 lg:left-6 lg:top-6">
-                            <div className="flex items-center gap-2 rounded-xl border border-blue-200/50 bg-white/90 px-3 py-2 shadow-lg backdrop-blur-xl dark:border-blue-800/30 dark:bg-neutral-900/90">
+                        <div className="absolute right-3 top-3 z-10 lg:right-5 lg:top-5">
+                            <div className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 shadow-lg backdrop-blur-xl dark:bg-neutral-900/90">
                                 <span className="relative flex h-2 w-2">
                                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-500 opacity-75" />
                                     <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
                                 </span>
-                                <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300">TRACKING</span>
+                                <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300">LIVE</span>
                             </div>
                         </div>
                     )}

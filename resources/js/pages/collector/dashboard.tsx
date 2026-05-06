@@ -1,7 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     CalendarClock, CheckCircle2, ChevronRight, ClipboardList,
-    MapPin, Navigation, Recycle, Scale, Truck, TrendingUp, Sparkles, ArrowRight,
+    MapPin, Navigation, Recycle, Scale, Truck, TrendingUp, Sparkles, ArrowRight, Gauge,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import CollectorLayout from '@/layouts/collector-layout';
@@ -22,6 +22,13 @@ type NextRoute = {
     stops_count: number;
 };
 
+type TruckInfo = {
+    id: number;
+    plate_no: string;
+    capacity_kg: number;
+    status: string;
+} | null;
+
 type Props = {
     stats: {
         today_count: number;
@@ -33,6 +40,13 @@ type Props = {
     };
     recentReports: RecentReport[];
     nextRoute: NextRoute | null;
+    truck: TruckInfo;
+};
+
+const truckStatusConfig: Record<string, { label: string; color: string; bg: string; dot: string }> = {
+    available: { label: 'Available', color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/40', dot: 'bg-emerald-500' },
+    maintenance: { label: 'Maintenance', color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/40', dot: 'bg-amber-500' },
+    inactive: { label: 'Inactive', color: 'text-neutral-500 dark:text-neutral-400', bg: 'bg-neutral-100 dark:bg-neutral-800', dot: 'bg-neutral-400' },
 };
 
 const fadeUp = (delay = 0) => ({
@@ -41,7 +55,7 @@ const fadeUp = (delay = 0) => ({
     transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
 });
 
-export default function CollectorDashboard({ stats, recentReports, nextRoute }: Props) {
+export default function CollectorDashboard({ stats, recentReports, nextRoute, truck }: Props) {
     const { auth } = usePage().props as { auth: { user: User } };
     const firstName = auth.user.name.split(' ')[0];
     const hour = new Date().getHours();
@@ -178,6 +192,52 @@ export default function CollectorDashboard({ stats, recentReports, nextRoute }: 
                         </Link>
                     </motion.div>
                 )}
+
+                {/* ===== My Truck ===== */}
+                <motion.div {...fadeUp(0.22)}
+                    className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+                >
+                    <div className="flex items-center gap-3 px-5 pt-4 pb-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-sm shadow-blue-500/20">
+                            <Truck size={14} className="text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-bold text-neutral-900 dark:text-white">My Truck</h2>
+                            <p className="text-[10px] text-neutral-400">Assigned vehicle details</p>
+                        </div>
+                    </div>
+                    {truck ? (
+                        <div className="flex items-center gap-4 px-5 pb-4">
+                            <div className="flex-1 space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs text-neutral-400">Plate No.</span>
+                                    <span className="rounded-lg bg-neutral-100 px-2.5 py-1 text-sm font-bold tracking-wider text-neutral-800 dark:bg-neutral-800 dark:text-white">{truck.plate_no}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs text-neutral-400">Capacity</span>
+                                    <span className="flex items-center gap-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                                        <Gauge size={13} className="text-neutral-400" />
+                                        {truck.capacity_kg.toLocaleString()} kg
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs text-neutral-400">Status</span>
+                                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${truckStatusConfig[truck.status]?.bg ?? 'bg-neutral-100 dark:bg-neutral-800'} ${truckStatusConfig[truck.status]?.color ?? 'text-neutral-500'}`}>
+                                        <span className={`h-1.5 w-1.5 rounded-full ${truckStatusConfig[truck.status]?.dot ?? 'bg-neutral-400'}`} />
+                                        {truckStatusConfig[truck.status]?.label ?? truck.status}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="px-5 pb-5">
+                            <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50/50 py-6 text-center dark:border-neutral-800 dark:bg-neutral-800/20">
+                                <Truck size={24} className="mx-auto text-neutral-300 dark:text-neutral-600" />
+                                <p className="mt-2 text-xs font-medium text-neutral-400">No truck assigned yet</p>
+                            </div>
+                        </div>
+                    )}
+                </motion.div>
 
                 {/* ===== Quick Actions ===== */}
                 <motion.div {...fadeUp(0.25)} className="grid grid-cols-2 gap-3">

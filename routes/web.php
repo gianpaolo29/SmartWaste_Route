@@ -32,6 +32,7 @@ Route::middleware(['auth'])->get('/dashboard', function () {
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminListController::class, 'dashboard'])->name('dashboard');
+    Route::get('/account', fn () => \Inertia\Inertia::render('admin/account'))->name('account');
     Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [\App\Http\Controllers\Admin\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 

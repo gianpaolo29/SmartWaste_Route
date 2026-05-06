@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Collector;
 use App\Http\Controllers\Controller;
 use App\Models\CollectionReport;
 use App\Models\RoutePlan;
+use App\Models\Truck;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -67,10 +68,18 @@ class CollectorDashboardController extends Controller
             'stops_count' => $nextRoute->stops->count(),
         ] : null;
 
+        $truck = Truck::where('collector_user_id', $userId)->first();
+
         return Inertia::render('collector/dashboard', [
             'stats'         => $stats,
             'recentReports' => $recentReports,
             'nextRoute'     => $next,
+            'truck'         => $truck ? [
+                'id'          => $truck->id,
+                'plate_no'    => $truck->plate_no,
+                'capacity_kg' => $truck->capacity_kg,
+                'status'      => $truck->status,
+            ] : null,
         ]);
     }
 }
