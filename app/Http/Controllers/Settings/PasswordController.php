@@ -23,10 +23,16 @@ class PasswordController extends Controller
      */
     public function update(PasswordUpdateRequest $request): RedirectResponse
     {
-        $request->user()->update([
+        $user = $request->user();
+
+        $user->update([
             'password' => $request->password,
         ]);
 
-        return back();
+        return match ($user->role) {
+            'admin' => redirect('/admin/account'),
+            'collector' => redirect('/collector/account'),
+            default => redirect('/resident/account'),
+        };
     }
 }

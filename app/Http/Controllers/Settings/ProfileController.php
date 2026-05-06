@@ -36,8 +36,8 @@ class ProfileController extends Controller
         $user->fill($request->safe()->only(['name', 'email']));
 
         if ($request->hasFile('avatar')) {
-            // Delete old avatar if it exists
-            if ($user->avatar) {
+            // Delete old avatar if it exists — only delete local files, not external URLs
+            if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
                 Storage::disk('public')->delete($user->avatar);
             }
 
@@ -50,7 +50,12 @@ class ProfileController extends Controller
 
         $user->save();
 
-        return back();
+        // Redirect to the correct account page based on role
+        return match ($user->role) {
+            'admin' => redirect('/admin/account'),
+            'collector' => redirect('/collector/account'),
+            default => redirect('/resident/account'),
+        };
     }
 
     /**
@@ -61,12 +66,19 @@ class ProfileController extends Controller
         $user = $request->user();
 
         if ($user->avatar) {
-            Storage::disk('public')->delete($user->avatar);
+            // Only delete local files, not external URLs (Google avatar etc.)
+            if (!str_starts_with($user->avatar, 'http')) {
+                Storage::disk('public')->delete($user->avatar);
+            }
             $user->avatar = null;
             $user->save();
         }
 
-        return back();
+        return match ($user->role) {
+            'admin' => redirect('/admin/account'),
+            'collector' => redirect('/collector/account'),
+            default => redirect('/resident/account'),
+        };
     }
 
     /**
