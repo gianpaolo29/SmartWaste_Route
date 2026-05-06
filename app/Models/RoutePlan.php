@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class RoutePlan extends Model
 {
+    use \App\Traits\Auditable;
+
     protected $fillable = [
         'route_date',
         'zone_id',

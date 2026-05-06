@@ -10,7 +10,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable, TwoFactorAuthenticatable, \App\Traits\Auditable;
 
     // Based on smartwaste_route.sql (lowercase defaults)
     public const ROLE_ADMIN = 'admin';

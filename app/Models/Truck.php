@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Truck extends Model
 {
+    use \App\Traits\Auditable;
+
     protected $fillable = ['plate_no', 'capacity_kg', 'status', 'collector_user_id'];
 
     protected $casts = [

@@ -197,6 +197,11 @@ ${items.map((r) => `<tr><td>${r.report_date}</td><td>${r.collector ?? '—'}</td
                             <Download size={14} />
                             Export
                         </button>
+                        <a href={`/admin/export/collection-reports?period=${selectedPeriod}`}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400">
+                            <Download size={14} />
+                            CSV
+                        </a>
                     </div>
                 </motion.div>
 

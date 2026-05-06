@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Collection;
 use App\Models\Household;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class PickupHistoryController extends Controller
@@ -39,6 +40,11 @@ class PickupHistoryController extends Controller
             'collector' => $c->routeStop?->routePlan?->collector?->name,
             'zone' => $c->routeStop?->routePlan?->zone?->name,
             'route_date' => $c->routeStop?->routePlan?->route_date?->toDateString(),
+            'proof_photo' => $c->proof_photo_url
+                ? ($c->proof_photo_url && !str_starts_with($c->proof_photo_url, 'http')
+                    ? Storage::disk('public')->url($c->proof_photo_url)
+                    : $c->proof_photo_url)
+                : null,
         ]);
 
         $stats = [

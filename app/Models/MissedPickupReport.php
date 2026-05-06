@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class MissedPickupReport extends Model
 {
+    use \App\Traits\Auditable;
+
     protected $fillable = [
         'resident_user_id',
         'zone_id',

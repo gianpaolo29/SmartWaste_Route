@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CollectionReport extends Model
 {
+    use \App\Traits\Auditable;
+
     protected $fillable = [
         'route_plan_id',
         'collector_user_id',

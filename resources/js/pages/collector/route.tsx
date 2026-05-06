@@ -14,6 +14,7 @@ import { TuyBoundary } from '@/components/tuy-boundary';
 import { SkipReasonModal } from '@/components/skip-reason-modal';
 import { PhotoCaptureModal } from '@/components/photo-capture-modal';
 import { confirm, errorAlert, promptText, toast } from '@/lib/notify';
+import { computeRoute, drawPolyline } from '@/lib/routes-api';
 
 type Stop = {
     id: number;
@@ -58,44 +59,30 @@ const post = async (path: string, body?: object): Promise<{ ok: boolean; status:
     }
 };
 
-/* ── RouteLine: draws the full collection route ── */
+/* ── RouteLine: draws the full collection route (Routes API) ── */
 function RouteLine({ stops }: { stops: Stop[] }) {
     const map = useMap();
-    const rendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+    const polylineRef = useRef<google.maps.Polyline | null>(null);
     const requestedRef = useRef(false);
 
     useEffect(() => {
         if (!map || stops.length < 2 || requestedRef.current) return;
-
-        rendererRef.current = new google.maps.DirectionsRenderer({
-            map,
-            suppressMarkers: true,
-            preserveViewport: true,
-            polylineOptions: { strokeColor: '#059669', strokeWeight: 5, strokeOpacity: 0.5 },
-        });
-
         requestedRef.current = true;
-        const service = new google.maps.DirectionsService();
-        service.route(
-            {
-                origin: { lat: stops[0].lat, lng: stops[0].lng },
-                destination: { lat: stops[stops.length - 1].lat, lng: stops[stops.length - 1].lng },
-                waypoints: stops.slice(1, -1).map((s) => ({
-                    location: { lat: s.lat, lng: s.lng },
-                    stopover: true,
-                })),
-                travelMode: google.maps.TravelMode.DRIVING,
-            },
-            (result, status) => {
-                if (status === 'OK' && result && rendererRef.current) {
-                    rendererRef.current.setDirections(result);
-                }
-            },
-        );
+
+        (async () => {
+            const result = await computeRoute(
+                { lat: stops[0].lat, lng: stops[0].lng },
+                { lat: stops[stops.length - 1].lat, lng: stops[stops.length - 1].lng },
+                stops.slice(1, -1).map((s) => ({ lat: s.lat, lng: s.lng })),
+            );
+            if (result && map) {
+                polylineRef.current = drawPolyline(map, result.polylinePath, { color: '#059669', weight: 5, opacity: 0.5 });
+            }
+        })();
 
         return () => {
-            rendererRef.current?.setMap(null);
-            rendererRef.current = null;
+            polylineRef.current?.setMap(null);
+            polylineRef.current = null;
             requestedRef.current = false;
         };
     }, [map, stops]);
@@ -113,14 +100,8 @@ type NavStep = {
     startLng: number;
 };
 
-/* ── Strip HTML tags from Google directions ── */
-function stripHtml(html: string) {
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    return div.textContent ?? div.innerText ?? '';
-}
 
-/* ── DirectionLine: road-following line from truck to next stop ── */
+/* ── DirectionLine: road-following line from truck to next stop (Routes API) ── */
 function DirectionLine({ from, to, onRouteInfo, onSteps }: {
     from: { lat: number; lng: number };
     to: { lat: number; lng: number };
@@ -128,57 +109,36 @@ function DirectionLine({ from, to, onRouteInfo, onSteps }: {
     onSteps?: (steps: NavStep[]) => void;
 }) {
     const map = useMap();
-    const rendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+    const polylineRef = useRef<google.maps.Polyline | null>(null);
     const lastFromRef = useRef<{ lat: number; lng: number } | null>(null);
     const lastToRef = useRef<{ lat: number; lng: number } | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const requestRoute = useCallback(() => {
+    const requestRoute = useCallback(async () => {
         if (!map) return;
 
-        if (!rendererRef.current) {
-            rendererRef.current = new google.maps.DirectionsRenderer({
-                map,
-                suppressMarkers: true,
-                preserveViewport: true,
-                polylineOptions: {
-                    strokeColor: '#2563eb',
-                    strokeWeight: 5,
-                    strokeOpacity: 0.6,
-                    zIndex: 5,
-                },
+        const result = await computeRoute(from, to);
+        if (!result || !map) return;
+
+        // Update polyline
+        if (polylineRef.current) {
+            polylineRef.current.setPath(result.polylinePath);
+        } else {
+            polylineRef.current = drawPolyline(map, result.polylinePath, {
+                color: '#2563eb', weight: 5, opacity: 0.6, zIndex: 5,
             });
         }
 
-        const service = new google.maps.DirectionsService();
-        service.route(
-            { origin: from, destination: to, travelMode: google.maps.TravelMode.DRIVING },
-            (result, status) => {
-                if (status === 'OK' && result && rendererRef.current) {
-                    rendererRef.current.setDirections(result);
-                    const leg = result.routes[0]?.legs[0];
-                    if (leg) {
-                        onRouteInfo?.({
-                            distance: leg.distance?.value ?? 0,
-                            duration: leg.duration?.value ?? 0,
-                            summary: leg.duration?.text ?? '',
-                        });
-                        // Extract turn-by-turn steps
-                        if (leg.steps && onSteps) {
-                            const steps: NavStep[] = leg.steps.map((s) => ({
-                                instruction: stripHtml(s.instructions ?? ''),
-                                distance: s.distance?.value ?? 0,
-                                distanceText: s.distance?.text ?? '',
-                                maneuver: (s as unknown as { maneuver?: string }).maneuver ?? '',
-                                startLat: s.start_location?.lat() ?? 0,
-                                startLng: s.start_location?.lng() ?? 0,
-                            }));
-                            onSteps(steps);
-                        }
-                    }
-                }
-            },
-        );
+        onRouteInfo?.({
+            distance: result.distance,
+            duration: result.duration,
+            summary: result.durationText,
+        });
+
+        if (onSteps && result.steps.length > 0) {
+            onSteps(result.steps);
+        }
+
         lastFromRef.current = from;
         lastToRef.current = to;
     }, [map, from, to, onRouteInfo, onSteps]);
@@ -208,8 +168,8 @@ function DirectionLine({ from, to, onRouteInfo, onSteps }: {
 
     useEffect(() => {
         return () => {
-            rendererRef.current?.setMap(null);
-            rendererRef.current = null;
+            polylineRef.current?.setMap(null);
+            polylineRef.current = null;
         };
     }, []);
 
@@ -313,25 +273,14 @@ export default function CollectorRoute({
         return { lat, lng };
     }, [stops]);
 
-    // Sort uncollected stops by distance from current position
+    // Keep stops in planned route order (optimized by admin during route creation)
     const sortedStops = useMemo(() => {
-        const done = stops.filter((s) => !!s.collection_status);
-        const pending = stops.filter((s) => !s.collection_status);
-        if (!me || pending.length === 0) return stops;
+        return [...stops].sort((a, b) => a.stop_no - b.stop_no);
+    }, [stops]);
 
-        // Sort pending by distance from truck (nearest first)
-        const sorted = [...pending].sort((a, b) => haversine(me, a) - haversine(me, b));
-        return [...done, ...sorted];
-    }, [stops, me]);
-
+    // Next stop = first uncollected stop in route order
     const nextStop = useMemo(() => {
-        if (!me) return stops.find((s) => !s.collection_status) ?? null;
-        const pending = stops.filter((s) => !s.collection_status);
-        if (pending.length === 0) return null;
-        // Nearest uncollected stop
-        return pending.reduce((closest, s) =>
-            haversine(me, s) < haversine(me, closest) ? s : closest
-        , pending[0]);
+        return sortedStops.find((s) => !s.collection_status) ?? null;
     }, [stops, me]);
 
     const navInfo = useMemo(() => {
@@ -373,7 +322,22 @@ export default function CollectorRoute({
 
             // Auto-select Google UK English Male as default
             if (selectedVoiceIdx === -1) {
-                const defaultIdx = all.findIndex((v) => v.name.toLowerCase().includes('google uk english male'));
+                const n = (v: SpeechSynthesisVoice) => v.name.toLowerCase();
+                const find = (...fns: ((v: SpeechSynthesisVoice) => boolean)[]) => {
+                    for (const fn of fns) {
+                        const idx = all.findIndex(fn);
+                        if (idx >= 0) return idx;
+                    }
+                    return -1;
+                };
+                const defaultIdx = find(
+                    (v) => n(v).includes('google uk english male'),
+                    (v) => n(v).includes('uk english male'),
+                    (v) => n(v).includes('google uk english'),
+                    (v) => v.lang === 'en-GB' && n(v).includes('male'),
+                    (v) => v.lang === 'en-GB',
+                    (v) => v.lang.startsWith('en') && n(v).includes('male'),
+                );
                 if (defaultIdx >= 0) setSelectedVoiceIdx(defaultIdx);
             }
         };
@@ -577,13 +541,36 @@ export default function CollectorRoute({
         }
         setStatus('in_progress');
         router.reload({ only: ['plan'] });
-        toast('success', 'Route started');
 
-        // Unlock speech synthesis on mobile (requires user gesture)
+        // Show prominent "Collection Started" alert
+        const { default: Swal } = await import('sweetalert2');
+        Swal.fire({
+            icon: 'success',
+            title: 'Collection Started!',
+            text: 'GPS tracking is now active. Follow the route to collect waste.',
+            confirmButtonColor: '#059669',
+            timer: 3000,
+            timerProgressBar: true,
+        });
+
+        // Speak "Collection started" immediately (user gesture unlocks speech)
         if (window.speechSynthesis) {
-            const unlock = new SpeechSynthesisUtterance('');
-            unlock.volume = 0;
-            window.speechSynthesis.speak(unlock);
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance('Collection started. Acquiring GPS signal.');
+            utterance.rate = 0.95;
+            utterance.volume = 1;
+            // Try to use the selected voice
+            if (selectedVoiceIdx >= 0 && availableVoices[selectedVoiceIdx]) {
+                utterance.voice = availableVoices[selectedVoiceIdx];
+            } else {
+                const voices = window.speechSynthesis.getVoices();
+                const preferred = voices.find((v) => v.name.toLowerCase().includes('google uk english male'))
+                    ?? voices.find((v) => v.name.toLowerCase().includes('uk english'))
+                    ?? voices.find((v) => v.lang === 'en-GB')
+                    ?? voices.find((v) => v.lang.startsWith('en'));
+                if (preferred) utterance.voice = preferred;
+            }
+            window.speechSynthesis.speak(utterance);
         }
 
         beginGpsWatch();
@@ -634,6 +621,13 @@ export default function CollectorRoute({
         );
         setRoadInfo(null);
         toast('success', `Stop #${stop.stop_no} marked ${statusValue}`);
+
+        // Voice feedback
+        if (statusValue === 'collected') {
+            speak(`Stop ${stop.stop_no} collected.`, true);
+        } else if (statusValue === 'skipped') {
+            speak(`Stop ${stop.stop_no} skipped.`, true);
+        }
     };
 
     const reportMissed = async (stop: Stop) => {
@@ -645,6 +639,7 @@ export default function CollectorRoute({
         );
         setRoadInfo(null);
         toast('warning', `Stop #${stop.stop_no} reported missed`);
+        speak(`Stop ${stop.stop_no} reported as missed.`, true);
     };
 
     // Auto-resume GPS tracking if route is already in_progress (e.g. page reload)
@@ -1219,7 +1214,7 @@ export default function CollectorRoute({
                                                 {isNext && (
                                                     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
                                                         <Navigation size={9} />
-                                                        NEAREST
+                                                        NEXT
                                                     </span>
                                                 )}
                                             </div>

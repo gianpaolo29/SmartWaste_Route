@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BarChart3, CalendarDays, ClipboardList, LayoutGrid, MapPin, Megaphone, Route, Truck, Users, Map, Container } from 'lucide-react';
+import { BarChart3, CalendarDays, ClipboardList, LayoutGrid, MapPin, Megaphone, Route, Truck, Users, Map, Container, TrendingUp, Radio, ScrollText } from 'lucide-react';
 import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
@@ -33,6 +33,13 @@ const operationsNav = [
     { title: 'Collection Reports', href: '/admin/collection-reports', icon: ClipboardList },
     { title: 'Missed Pickups', href: '/admin/reports', icon: BarChart3 },
     { title: 'Announcements', href: '/admin/announcements', icon: Megaphone },
+];
+
+const analyticsNav = [
+    { title: 'Waste Trends', href: '/admin/analytics/waste-trends', icon: TrendingUp },
+    { title: 'Zone Heatmap', href: '/admin/analytics/zone-heatmap', icon: Map },
+    { title: 'Live Fleet', href: '/admin/analytics/fleet', icon: Radio },
+    { title: 'Audit Log', href: '/admin/audit-logs', icon: ScrollText },
 ];
 
 export function AdminSidebar() {
@@ -81,6 +88,7 @@ export function AdminSidebar() {
                 {renderGroup('Dashboard', mainNav)}
                 {renderGroup('Management', managementNav)}
                 {renderGroup('Operations', operationsNav)}
+                {renderGroup('Analytics', analyticsNav)}
             </SidebarContent>
 
             <SidebarFooter>

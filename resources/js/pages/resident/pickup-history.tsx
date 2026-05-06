@@ -1,9 +1,10 @@
 import { Head } from '@inertiajs/react';
 import {
     CheckCircle2, XCircle, SkipForward, Clock,
-    Truck, Calendar, Recycle,
+    Truck, Calendar, Recycle, Camera, X,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 import ResidentLayout from '@/layouts/resident-layout';
 
 type Pickup = {
@@ -16,6 +17,7 @@ type Pickup = {
     collector: string | null;
     zone: string | null;
     route_date: string | null;
+    proof_photo: string | null;
 };
 
 type Props = {
@@ -36,6 +38,8 @@ const fadeUp = (delay = 0) => ({
 });
 
 export default function PickupHistory({ pickups, stats }: Props) {
+    const [photoModal, setPhotoModal] = useState<Pickup | null>(null);
+
     // Group pickups by date
     const grouped = pickups.reduce<Record<string, Pickup[]>>((acc, p) => {
         const key = p.date ?? 'Unknown';
@@ -105,9 +109,19 @@ export default function PickupHistory({ pickups, stats }: Props) {
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex items-center justify-between gap-2">
                                                             <p className="text-sm font-semibold text-neutral-900 dark:text-white">{cfg.label}</p>
-                                                            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${cfg.bg} ${cfg.color}`}>
-                                                                {cfg.label}
-                                                            </span>
+                                                            <div className="flex items-center gap-1.5">
+                                                                {p.proof_photo && (
+                                                                    <button
+                                                                        onClick={() => setPhotoModal(p)}
+                                                                        className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:hover:bg-blue-900/40"
+                                                                    >
+                                                                        <Camera size={10} /> Proof
+                                                                    </button>
+                                                                )}
+                                                                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${cfg.bg} ${cfg.color}`}>
+                                                                    {cfg.label}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-neutral-400">
                                                             {p.time && (
@@ -129,6 +143,20 @@ export default function PickupHistory({ pickups, stats }: Props) {
                                                         )}
                                                     </div>
                                                 </div>
+
+                                                {/* Photo thumbnail */}
+                                                {p.proof_photo && (
+                                                    <button
+                                                        onClick={() => setPhotoModal(p)}
+                                                        className="w-full border-t border-neutral-100 dark:border-neutral-800"
+                                                    >
+                                                        <img
+                                                            src={p.proof_photo}
+                                                            alt="Collection proof"
+                                                            className="h-32 w-full object-cover transition-opacity hover:opacity-90"
+                                                        />
+                                                    </button>
+                                                )}
                                             </div>
                                         );
                                     })}
@@ -138,6 +166,66 @@ export default function PickupHistory({ pickups, stats }: Props) {
                     </div>
                 )}
             </div>
+
+            {/* Photo proof modal */}
+            <AnimatePresence>
+                {photoModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                        onClick={() => setPhotoModal(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                            className="relative mx-4 w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-neutral-900"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Close button */}
+                            <button
+                                onClick={() => setPhotoModal(null)}
+                                className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+                            >
+                                <X size={16} />
+                            </button>
+
+                            {/* Photo */}
+                            {photoModal.proof_photo && (
+                                <img
+                                    src={photoModal.proof_photo}
+                                    alt="Collection proof"
+                                    className="max-h-[60vh] w-full object-contain bg-neutral-100 dark:bg-neutral-800"
+                                />
+                            )}
+
+                            {/* Details */}
+                            <div className="space-y-2 p-5">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-base font-bold text-neutral-900 dark:text-white">Collection Proof</h3>
+                                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusConfig[photoModal.status]?.bg ?? ''} ${statusConfig[photoModal.status]?.color ?? ''}`}>
+                                        {statusConfig[photoModal.status]?.label ?? photoModal.status}
+                                    </span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-400">
+                                    {photoModal.time && (
+                                        <span className="flex items-center gap-1"><Clock size={12} /> {photoModal.date} at {photoModal.time}</span>
+                                    )}
+                                    {photoModal.collector && (
+                                        <span className="flex items-center gap-1"><Truck size={12} /> {photoModal.collector}</span>
+                                    )}
+                                </div>
+                                {photoModal.remarks && (
+                                    <p className="text-xs italic text-neutral-500 dark:text-neutral-400">"{photoModal.remarks}"</p>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </ResidentLayout>
     );
 }

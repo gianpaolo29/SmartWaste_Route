@@ -90,18 +90,24 @@ class ResidentDashboardController extends Controller
             (float) $route->current_lng,
         );
 
-        // Check if this resident's household is the next uncollected stop
+        // Check if this resident's household is on this route and still uncollected
         $route->load(['stops' => fn ($q) => $q->orderBy('stop_no'), 'stops.collection']);
+
+        // Find this household's stop on the route
+        $myStop = $route->stops->firstWhere('household_id', $household->id);
+
+        // If household is not on this route, or already collected — no alert needed
+        if (!$myStop || ($myStop->collection && $myStop->collection->status === 'collected')) {
+            return response()->json(['truck' => null]);
+        }
+
         $isNextStop = false;
         $stopsAway = 0;
 
-        // Find uncollected stops sorted by distance from truck
+        // Find uncollected stops in planned route order
         $uncollected = $route->stops
             ->filter(fn ($s) => !$s->collection || $s->collection->status !== 'collected')
-            ->sortBy(fn ($s) => $this->haversine(
-                (float) $route->current_lat, (float) $route->current_lng,
-                (float) $s->lat, (float) $s->lng,
-            ))
+            ->sortBy('stop_no')
             ->values();
 
         foreach ($uncollected as $i => $stop) {

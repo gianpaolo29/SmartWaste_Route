@@ -1,4 +1,5 @@
 import { Head } from '@inertiajs/react';
+import { computeRoute, drawPolyline } from '@/lib/routes-api';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     APIProvider,
@@ -30,44 +31,30 @@ type Plan = {
     stops: Stop[];
 };
 
-/* ── RouteLine: full collection route (requested once) ── */
+/* ── RouteLine: full collection route (Routes API) ── */
 function RouteLine({ stops }: { stops: Stop[] }) {
     const map = useMap();
-    const rendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+    const polylineRef = useRef<google.maps.Polyline | null>(null);
     const requestedRef = useRef(false);
 
     useEffect(() => {
         if (!map || stops.length < 2 || requestedRef.current) return;
-
-        rendererRef.current = new google.maps.DirectionsRenderer({
-            map,
-            suppressMarkers: true,
-            preserveViewport: true,
-            polylineOptions: { strokeColor: '#059669', strokeWeight: 5, strokeOpacity: 0.5 },
-        });
-
         requestedRef.current = true;
-        const service = new google.maps.DirectionsService();
-        service.route(
-            {
-                origin: { lat: stops[0].lat, lng: stops[0].lng },
-                destination: { lat: stops[stops.length - 1].lat, lng: stops[stops.length - 1].lng },
-                waypoints: stops.slice(1, -1).map((s) => ({
-                    location: { lat: s.lat, lng: s.lng },
-                    stopover: true,
-                })),
-                travelMode: google.maps.TravelMode.DRIVING,
-            },
-            (result, status) => {
-                if (status === 'OK' && result && rendererRef.current) {
-                    rendererRef.current.setDirections(result);
-                }
-            },
-        );
+
+        (async () => {
+            const result = await computeRoute(
+                { lat: stops[0].lat, lng: stops[0].lng },
+                { lat: stops[stops.length - 1].lat, lng: stops[stops.length - 1].lng },
+                stops.slice(1, -1).map((s) => ({ lat: s.lat, lng: s.lng })),
+            );
+            if (result && map) {
+                polylineRef.current = drawPolyline(map, result.polylinePath, { color: '#059669', weight: 5, opacity: 0.5 });
+            }
+        })();
 
         return () => {
-            rendererRef.current?.setMap(null);
-            rendererRef.current = null;
+            polylineRef.current?.setMap(null);
+            polylineRef.current = null;
             requestedRef.current = false;
         };
     }, [map, stops]);
@@ -75,52 +62,32 @@ function RouteLine({ stops }: { stops: Stop[] }) {
     return null;
 }
 
-/* ── DirectionLine: road-following line from truck to next stop (throttled) ── */
+/* ── DirectionLine: road-following line from truck to next stop (Routes API) ── */
 function DirectionLine({ from, to, onRouteInfo }: {
     from: { lat: number; lng: number };
     to: { lat: number; lng: number };
     onRouteInfo?: (info: { distance: number; duration: number; summary: string }) => void;
 }) {
     const map = useMap();
-    const rendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+    const polylineRef = useRef<google.maps.Polyline | null>(null);
     const lastFromRef = useRef<{ lat: number; lng: number } | null>(null);
     const lastToRef = useRef<{ lat: number; lng: number } | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const requestRoute = useCallback(() => {
+    const requestRoute = useCallback(async () => {
         if (!map) return;
+        const result = await computeRoute(from, to);
+        if (!result || !map) return;
 
-        if (!rendererRef.current) {
-            rendererRef.current = new google.maps.DirectionsRenderer({
-                map,
-                suppressMarkers: true,
-                preserveViewport: true,
-                polylineOptions: {
-                    strokeColor: '#2563eb',
-                    strokeWeight: 5,
-                    strokeOpacity: 0.6,
-                    zIndex: 5,
-                },
+        if (polylineRef.current) {
+            polylineRef.current.setPath(result.polylinePath);
+        } else {
+            polylineRef.current = drawPolyline(map, result.polylinePath, {
+                color: '#2563eb', weight: 5, opacity: 0.6, zIndex: 5,
             });
         }
 
-        const service = new google.maps.DirectionsService();
-        service.route(
-            { origin: from, destination: to, travelMode: google.maps.TravelMode.DRIVING },
-            (result, status) => {
-                if (status === 'OK' && result && rendererRef.current) {
-                    rendererRef.current.setDirections(result);
-                    const leg = result.routes[0]?.legs[0];
-                    if (leg && onRouteInfo) {
-                        onRouteInfo({
-                            distance: leg.distance?.value ?? 0,
-                            duration: leg.duration?.value ?? 0,
-                            summary: leg.duration?.text ?? '',
-                        });
-                    }
-                }
-            },
-        );
+        onRouteInfo?.({ distance: result.distance, duration: result.duration, summary: result.durationText });
         lastFromRef.current = from;
         lastToRef.current = to;
     }, [map, from, to, onRouteInfo]);
@@ -141,7 +108,7 @@ function DirectionLine({ from, to, onRouteInfo }: {
     }, [map, from.lat, from.lng, to.lat, to.lng, requestRoute]);
 
     useEffect(() => {
-        return () => { rendererRef.current?.setMap(null); rendererRef.current = null; };
+        return () => { polylineRef.current?.setMap(null); polylineRef.current = null; };
     }, []);
 
     return null;

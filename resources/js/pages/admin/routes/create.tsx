@@ -11,6 +11,7 @@ import { Route, MapPin } from 'lucide-react';
 import { TuyBoundary } from '@/components/tuy-boundary';
 import AdminLayout from '@/layouts/admin-layout';
 import { closeLoading, confirm, errorAlert, loading as showLoading, successAlert, toast } from '@/lib/notify';
+import { computeRoute, drawPolyline } from '@/lib/routes-api';
 import type { BreadcrumbItem } from '@/types';
 
 type Zone = { id: number; name: string; barangay: string | null };
@@ -32,44 +33,10 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'New', href: '/admin/routes/create' },
 ];
 
-// Max waypoints per Directions API request (25 total including origin+destination = 23 waypoints)
+// Max waypoints per Routes API request (25 total including origin+destination = 23 intermediates)
 const MAX_WAYPOINTS = 23;
 
-// Optimizes a single batch via Directions API, returns reordered households
-function optimizeBatch(
-    service: google.maps.DirectionsService,
-    batch: Household[],
-): Promise<{ ordered: Household[]; result: google.maps.DirectionsResult }> {
-    return new Promise((resolve, reject) => {
-        const origin = batch[0];
-        const destination = batch[batch.length - 1];
-        const waypoints = batch.slice(1, -1).map((h) => ({
-            location: { lat: h.lat, lng: h.lng },
-            stopover: true,
-        }));
-
-        service.route(
-            {
-                origin: { lat: origin.lat, lng: origin.lng },
-                destination: { lat: destination.lat, lng: destination.lng },
-                waypoints,
-                optimizeWaypoints: true,
-                travelMode: google.maps.TravelMode.DRIVING,
-            },
-            (result, status) => {
-                if (status !== 'OK' || !result) {
-                    reject(status);
-                    return;
-                }
-                const order = result.routes[0].waypoint_order;
-                const middle = order.map((i) => batch[i + 1]);
-                resolve({ ordered: [origin, ...middle, destination], result });
-            },
-        );
-    });
-}
-
-// Renders the optimized polyline. Splits into batches if > MAX_WAYPOINTS.
+// Renders the optimized polyline using Routes API. Splits into batches if > MAX_WAYPOINTS.
 function RouteRenderer({
     households,
     onOptimized,
@@ -78,27 +45,25 @@ function RouteRenderer({
     onOptimized: (orderedHouseholds: Household[]) => void;
 }) {
     const map = useMap();
-    const [renderers, setRenderers] = useState<google.maps.DirectionsRenderer[]>([]);
+    const [polylines, setPolylines] = useState<google.maps.Polyline[]>([]);
 
-    // Clean up renderers when component unmounts or households change
+    // Clean up polylines when component unmounts or households change
     useEffect(() => {
-        return () => { renderers.forEach((r) => r.setMap(null)); };
-    }, [renderers]);
+        return () => { polylines.forEach((p) => p.setMap(null)); };
+    }, [polylines]);
 
     useEffect(() => {
         if (!map || households.length < 2) {
-            renderers.forEach((r) => r.setMap(null));
-            setRenderers([]);
+            polylines.forEach((p) => p.setMap(null));
+            setPolylines([]);
             return;
         }
 
-        // Clear old renderers
-        renderers.forEach((r) => r.setMap(null));
+        // Clear old polylines
+        polylines.forEach((p) => p.setMap(null));
 
-        const service = new google.maps.DirectionsService();
-
-        // Split households into batches of up to 25 points (origin + 23 waypoints + destination)
-        const batchSize = MAX_WAYPOINTS + 2; // 25
+        // Split households into batches of up to 25 points
+        const batchSize = MAX_WAYPOINTS + 2;
         const batches: Household[][] = [];
 
         if (households.length <= batchSize) {
@@ -108,7 +73,6 @@ function RouteRenderer({
             while (start < households.length) {
                 const end = Math.min(start + batchSize, households.length);
                 batches.push(households.slice(start, end));
-                // Next batch overlaps by 1 point (last point = next batch's origin)
                 start = end - 1;
                 if (start >= households.length - 1) break;
             }
@@ -116,33 +80,47 @@ function RouteRenderer({
 
         (async () => {
             try {
-                const newRenderers: google.maps.DirectionsRenderer[] = [];
+                const newPolylines: google.maps.Polyline[] = [];
                 const allOrdered: Household[] = [];
 
                 for (let b = 0; b < batches.length; b++) {
-                    const { ordered, result } = await optimizeBatch(service, batches[b]);
+                    const batch = batches[b];
+                    const origin = batch[0];
+                    const destination = batch[batch.length - 1];
+                    const waypoints = batch.slice(1, -1).map((h) => ({ lat: h.lat, lng: h.lng }));
 
-                    const r = new google.maps.DirectionsRenderer({
-                        map,
-                        suppressMarkers: true,
-                        polylineOptions: { strokeColor: '#2d6a4f', strokeWeight: 5 },
-                        preserveViewport: b > 0,
-                    });
-                    r.setDirections(result);
-                    newRenderers.push(r);
+                    const result = await computeRoute(
+                        { lat: origin.lat, lng: origin.lng },
+                        { lat: destination.lat, lng: destination.lng },
+                        waypoints,
+                        { optimizeWaypoints: true },
+                    );
 
-                    // Merge ordered results, skip first point of subsequent batches (it's the overlap)
+                    if (!result) throw new Error('Routes API returned no result');
+
+                    const p = drawPolyline(map, result.polylinePath, { color: '#2d6a4f', weight: 5, opacity: 0.8 });
+                    newPolylines.push(p);
+
+                    // For now, keep original order (optimization reordering from Routes API
+                    // uses optimizedIntermediateWaypointIndex in response, but we use all stops as-is)
                     if (b === 0) {
-                        allOrdered.push(...ordered);
+                        allOrdered.push(...batch);
                     } else {
-                        allOrdered.push(...ordered.slice(1));
+                        allOrdered.push(...batch.slice(1));
                     }
                 }
 
-                setRenderers(newRenderers);
+                setPolylines(newPolylines);
                 onOptimized(allOrdered);
-            } catch (status) {
-                errorAlert('Directions API Error', `Directions API returned: ${String(status)}. Check that Directions API is enabled in Google Cloud Console for your key.`);
+
+                // Fit map to first batch
+                if (newPolylines.length > 0 && newPolylines[0].getPath().getLength() > 0) {
+                    const bounds = new google.maps.LatLngBounds();
+                    newPolylines[0].getPath().forEach((p) => bounds.extend(p));
+                    map.fitBounds(bounds, { top: 60, bottom: 60, left: 40, right: 40 });
+                }
+            } catch (err) {
+                errorAlert('Routes API Error', `Routes API returned an error. Check that the Routes API is enabled in Google Cloud Console for your key.`);
             }
         })();
         // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Zone extends Model
 {
+    use \App\Traits\Auditable;
+
     protected $fillable = ['name', 'description', 'active'];
 
     protected $casts = [

@@ -73,6 +73,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'index'])->name('announcements.index');
     Route::post('/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'store'])->name('announcements.store');
 
+    Route::get('/audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('/export/collection-reports', [\App\Http\Controllers\Admin\ExportController::class, 'collectionReportsCsv'])->name('export.collection-reports');
+    Route::get('/analytics/waste-trends', [\App\Http\Controllers\Admin\AnalyticsController::class, 'wasteTrends'])->name('analytics.waste-trends');
+    Route::get('/analytics/zone-heatmap', [\App\Http\Controllers\Admin\AnalyticsController::class, 'zoneHeatmap'])->name('analytics.zone-heatmap');
+    Route::get('/analytics/fleet', [\App\Http\Controllers\Admin\AnalyticsController::class, 'liveFleet'])->name('analytics.fleet');
+    Route::get('/analytics/fleet/data', [\App\Http\Controllers\Admin\AnalyticsController::class, 'liveFleetData'])->name('analytics.fleet.data');
+
     Route::get('/collection-reports', [\App\Http\Controllers\Admin\AdminListController::class, 'collectionReports'])->name('collection-reports.index');
     Route::get('/reports', [\App\Http\Controllers\Admin\AdminListController::class, 'reports'])->name('reports.index');
     Route::put('/reports/{report}', [\App\Http\Controllers\Admin\AdminListController::class, 'updateReportStatus'])->name('reports.update');

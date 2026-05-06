@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Schedule extends Model
 {
+    use \App\Traits\Auditable;
+
     protected $fillable = [
         'zone_id',
         'day_of_week',
